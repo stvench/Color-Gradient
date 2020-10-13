@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import cv2
 import math
-
+from statistics import mean
 
 def read_clusMask(waveband, galNum, group):
     # Get Image of Galaxy Arms
@@ -83,6 +83,7 @@ def get_singleArm(galaxyArms, position):
     return closestArm
 
 
+
 def mergeArms(arms):
     ### arms should be a iterable of sets of tuples
     armPosition = set()
@@ -97,7 +98,7 @@ def arm_to_ArcsCircles(armPosition,center):
     maxRadius = math.floor(max(allDists))
     arcsCircles_Positions = []
     for radius in range(minRadius,maxRadius+1):
-        arcsCircles_Positions.append( (radius,set(),set()) )
+        arcsCircles_Positions.append( [radius,[],set(),None,None] )
         minPhi = None
         maxPhi = None
         # Obtain min/max angle of the arc overlap
@@ -109,7 +110,9 @@ def arm_to_ArcsCircles(armPosition,center):
             if (curDist >= radius-0.5) and (curDist <= radius+0.5) and ((i,j) in armPosition):
                 if (minPhi is None):
                     minPhi = phi
-                maxPhi = phi                  
+                maxPhi = phi      
+        arcsCircles_Positions[-1][3] = minPhi
+        arcsCircles_Positions[-1][4] = maxPhi         
         # Stores the points for ARC and CIRCLE
         for phi in range(360):
             radian = phi/180*math.pi
@@ -121,85 +124,41 @@ def arm_to_ArcsCircles(armPosition,center):
                 arcsCircles_Positions[-1][2].add((i,j))
                 # If within the phi range for the ARC
                 if (phi >= minPhi) and (phi <= maxPhi):
-                    arcsCircles_Positions[-1][1].add((i,j))
-    # Returns a list of 3-tuples (radius, {arc}, {circle})
+                    arcsCircles_Positions[-1][1].append((phi,i,j))
+    # Returns a list of 5-tuples (radius, [arc], {circle}, minPhi, maxPhi)
     return arcsCircles_Positions
 
 
-def arcStart(arcPositions):
-    startPoints = []
-    for i,j in arcPositions:
-        # Get all neighbors of current pixel 
-        neighbors = []
-        right, left, up, down, mr, ml ,mu, md = False, False, False, False, False, False, False, False
-        if (i,j+1) in arcPositions:
-            neighbors.append((i,j+1))
-            right = True
-            mr = True
-        if (i,j-1) in arcPositions:
-            neighbors.append((i,j-1))
-            left = True
-            ml = True
-        if (i+1,j) in arcPositions:
-            neighbors.append((i+1,j))
-            down = True
-            md = True
-        if (i-1,j) in arcPositions:
-            neighbors.append((i-1,j))
-            up = True
-            mu = True
-        if (i+1,j+1) in arcPositions:
-            neighbors.append((i+1,j+1))
-            down = True
-            right = True
-        if (i-1,j+1) in arcPositions:
-            neighbors.append((i-1,j+1))
-            up = True
-            right = True
-        if (i+1,j-1) in arcPositions:
-            neighbors.append((i+1,j-1))
-            down = True
-            left = True
-        if (i-1,j-1) in arcPositions:
-            neighbors.append((i-1,j-1))
-            up = True
-            left = True
-        # Check for "C" pattern
-        if (right) and ( (not mu) and (not md) and (not left) ):
-            startPoints.append((i,j))
-        if (left)  and ( (not mu) and (not md) and (not right) ):
-            startPoints.append((i,j))
-        if (up)    and ( (not mr) and (not ml) and (not down) ):
-            startPoints.append((i,j))
-        if (down)  and ( (not mr) and (not ml) and (not up) ):
-            startPoints.append((i,j))
-    leftmostStartPoint = sorted(startPoints, key=lambda x: x[1])[0]
-    return leftmostStartPoint # tuple (i,j)### Helpers
 
-def arcOrder(arcPositions, startPoint):
-    # Starting from {startPoint} calculate the closest pixel within {arcPositions}, add to new list to be returned, then remove it from arcPositions
-    ordered = []
-    copyArcPositions = arcPositions.copy()
-    prevPoint = startPoint
-    while len(copyArcPositions) != 0:
-        minDist = None
-        closestPoint = None      
-        for curPoint in copyArcPositions:
-            curDist = calcDist(curPoint,prevPoint)
-            if (minDist is None) or (curDist<=minDist):
-                minDist = curDist
-                closestPoint = curPoint
-        copyArcPositions.remove(closestPoint)
-        ordered.append(closestPoint)
-        prevPoint = closestPoint
-    return ordered
+def t(middle, inner, outer):
+    l = []
+    for phi, i , j in middle[1]:
+        l.append([(i,j)])
+        for Iphi,Ii,Ij in inner[1]:
+            if phi == Iphi:
+                l[-1].append((Ii,Ij))
+        for Ophi,Oi,Oj in outer[1]:
+            if phi == Ophi:
+                l[-1].append((Oi,Oj))
+    return l
 
-def read_fits(arcPixelOrdered,waveband,galNum):
-    hdul = fits.open("{}/{}_{}.fits".format(galNum,galNum,waveband))
-    image_data = hdul[0].data # 2-D Numpy Array
+def unmergedFits(arcList,waveband1,waveband2,galNum):
+    hdul = fits.open("{}/{}_{}.fits".format(galNum,galNum,waveband1))
+    image_data1 = hdul[0].data # 2-D Numpy Array
     hdul.close()
-    fitsOrdered = [image_data[i,j] for i,j in arcPixelOrdered]
-    return fitsOrdered
+    hdul = fits.open("{}/{}_{}.fits".format(galNum,galNum,waveband2))
+    image_data2 = hdul[0].data # 2-D Numpy Array
+    hdul.close()
+    return [image_data1[i,j]-image_data2[i,j] for phi,i,j in arcList]
+
+def mergedFits(l, waveband1,waveband2,galNum):
+    hdul = fits.open("{}/{}_{}.fits".format(galNum,galNum,waveband1))
+    image_data1 = hdul[0].data # 2-D Numpy Array
+    hdul.close()
+    hdul = fits.open("{}/{}_{}.fits".format(galNum,galNum,waveband2))
+    image_data2 = hdul[0].data # 2-D Numpy Array
+    hdul.close()
+    return [mean([image_data1[i,j]-image_data2[i,j] for i,j in x]) for x in l]
 
 
 
@@ -212,23 +171,32 @@ def MAIN(waveband1, waveband2, galNum, position, group):
     armPosition                          = mergeArms(arms=[waveband1Arm,waveband2Arm])
     arcsCircles_Positions                = arm_to_ArcsCircles(armPosition=armPosition, center=center)
 
-### FOR ONLY THE INNER RADIUS
-    radius, arc, circle = arcsCircles_Positions[4] # 0-34 in all
-    leftStartPoint  = arcStart(arcPositions=arc)
-    arcPixelOrdered = arcOrder(arcPositions=arc, startPoint=leftStartPoint)
-    fitsOrdered1    = read_fits(arcPixelOrdered=arcPixelOrdered,waveband=waveband1,galNum=galNum)
-    fitsOrdered2    = read_fits(arcPixelOrdered=arcPixelOrdered,waveband=waveband2,galNum=galNum)
-    subtracted      = [fitsOrdered1[index]-fitsOrdered2[index] for index in range(len(fitsOrdered1))]
-    step_visualizer(rows, cols, waveband1,waveband2,galNum,position,pixelLoc1,pixelLoc2,waveband1Arm,waveband2Arm,armPosition,arc,leftStartPoint,arcPixelOrdered,circle,subtracted)
-### FOR ALL POSSIBLE RADIUS
-    # for radius, arc, circle in arcsCircles_Positions:
-    #     leftStartPoint  = arcStart(arcPositions=arc)
-    #     arcPixelOrdered = arcOrder(arcPositions=arc, startPoint=leftStartPoint)
-    #     fitsOrdered1    = read_fits(arcPixelOrdered=arcPixelOrdered,waveband=waveband1,galNum=galNum)
-    #     fitsOrdered2    = read_fits(arcPixelOrdered=arcPixelOrdered,waveband=waveband2,galNum=galNum)
-    #     subtracted      = [fitsOrdered1[index]-fitsOrdered2[index] for index in range(len(fitsOrdered1))]
-    #     step_visualizer(rows, cols, waveband1,waveband2,galNum,position,pixelLoc1,pixelLoc2,waveband1Arm,waveband2Arm,armPosition,arc,leftStartPoint,arcPixelOrdered,circle,subtracted)
-    #     break
+    for i in range(1,33):
+        if len(arcsCircles_Positions[i][1]) > 50:
+            unmerged = unmergedFits(arcsCircles_Positions[i][1],waveband1,waveband2,galNum)
+            l = t(arcsCircles_Positions[i],arcsCircles_Positions[i-1],arcsCircles_Positions[i+1])
+            merged = mergedFits(l, waveband1,waveband2,galNum)
+            mng = plt.get_current_fig_manager()
+            mng.window.state('zoomed')
+
+            plt.subplot(121)
+            a = np.zeros((rows,cols))
+            for ii, ij in armPosition:
+                a[ii,ij]=2
+            for ii, ij in arcsCircles_Positions[i][2]:
+                a[ii,ij]=1
+            for phi,ii, ij in arcsCircles_Positions[i][1]:
+                a[ii,ij]=3
+            plt.imshow(a)
+            plt.title('Combination')
+            plt.subplot(222)
+            plt.plot(unmerged)
+            plt.title("Unmerged Radius {}, {}-{}".format(arcsCircles_Positions[i][0],waveband1,waveband2))
+            plt.subplot(224)
+            plt.plot(merged)
+            plt.title("Merged Radius ({},{},{}), {}-{}".format(arcsCircles_Positions[i][0]-1,arcsCircles_Positions[i][0],arcsCircles_Positions[i][0]+1,waveband1,waveband2))
+            plt.show()
+
     
 ### Helper Functions
 def calcDist(point1, point2):
@@ -305,4 +273,4 @@ def step_visualizer(rows, cols, waveband1, waveband2, galNum, position,pixelLoc1
 
 
 if __name__ == "__main__":
-    MAIN(waveband1='g',waveband2='r',galNum='1237660635996291172', position=(110,110), group=True)
+    MAIN(waveband1='g',waveband2='i',galNum='1237660635996291172', position=(110,110), group=True)
