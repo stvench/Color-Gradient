@@ -91,34 +91,27 @@ def mergeArms(arms):
     ### singleArm(single set of tuples)    
     return armPosition # {(i,j) , (i,j)}
     
-def arm_Span(armPosition,center):
+def arm_to_ArcsCircles(armPosition,center):
     allDists = [calcDist(point,center) for point in armPosition]
     minRadius = math.ceil(min(allDists))
     maxRadius = math.floor(max(allDists))
-    #  Initialize minPhi, maxPhi
-    minPhi = maxPhi = None
-    for radius in range(minRadius,maxRadius+1):
-        curRadiusMinPhi = curRadiusMaxPhi = None
-        for phi in range(360): # Maybe directly range loop through radian?
-            radian = phi/180*math.pi
-            i = roundVal(radius*math.cos(radian)+center[0])
-            j = roundVal(radius*math.sin(radian)+center[1])
-            if (i,j) in armPosition:
-                if curRadiusMinPhi is None:
-                    curRadiusMinPhi = phi
-                curRadiusMaxPhi = phi
-        if (minPhi is None) or (curRadiusMinPhi <= minPhi):
-            minPhi = curRadiusMinPhi
-        if (maxPhi is None) or (curRadiusMaxPhi >= maxPhi):
-            maxPhi = curRadiusMaxPhi
-    ### Returns the min/max DEGREE value in range of [0,359]
-    return minPhi, maxPhi, minRadius, maxRadius
-
-def arm_to_ArcsCircles(armPosition,center,minPhi,maxPhi,minRadius,maxRadius):
     arcsCircles_Positions = []
     for radius in range(minRadius,maxRadius+1):
         arcsCircles_Positions.append( (radius,set(),set()) )
-        for phi in range(360): ##################### Maybe directly range loop through radian?
+        minPhi = None
+        maxPhi = None
+        # Obtain min/max angle of the arc overlap
+        for phi in range(360):
+            radian = phi/180*math.pi
+            i = roundVal(radius*math.cos(radian)+center[0])
+            j = roundVal(radius*math.sin(radian)+center[1])
+            curDist = calcDist(center,(i,j))
+            if (curDist >= radius-0.5) and (curDist <= radius+0.5) and ((i,j) in armPosition):
+                if (minPhi is None):
+                    minPhi = phi
+                maxPhi = phi                  
+        # Stores the points for ARC and CIRCLE
+        for phi in range(360):
             radian = phi/180*math.pi
             i = roundVal(radius*math.cos(radian)+center[0])
             j = roundVal(radius*math.sin(radian)+center[1])
@@ -217,11 +210,10 @@ def MAIN(waveband1, waveband2, galNum, position, group):
     waveband2Arm      = get_singleArm(galaxyArms=pixelLoc2, position=position)
 
     armPosition                          = mergeArms(arms=[waveband1Arm,waveband2Arm])
-    minPhi, maxPhi, minRadius, maxRadius = arm_Span(armPosition=armPosition,center=center)
-    arcsCircles_Positions                = arm_to_ArcsCircles(armPosition=armPosition, center=center, minPhi=minPhi, maxPhi=maxPhi, minRadius=minRadius, maxRadius=maxRadius)
+    arcsCircles_Positions                = arm_to_ArcsCircles(armPosition=armPosition, center=center)
 
 ### FOR ONLY THE INNER RADIUS
-    radius, arc, circle = arcsCircles_Positions[int(len(arcsCircles_Positions)/2)]
+    radius, arc, circle = arcsCircles_Positions[4] # 0-34 in all
     leftStartPoint  = arcStart(arcPositions=arc)
     arcPixelOrdered = arcOrder(arcPositions=arc, startPoint=leftStartPoint)
     fitsOrdered1    = read_fits(arcPixelOrdered=arcPixelOrdered,waveband=waveband1,galNum=galNum)
@@ -303,7 +295,7 @@ def step_visualizer(rows, cols, waveband1, waveband2, galNum, position,pixelLoc1
     plt.plot(subtracted)
     plt.title('{}-{} ({})'.format(waveband1.upper(),waveband2.upper(),galNum),size=20)
     plt.ylabel('Photon Count Dif',size=15)
-    plt.xlabel('Pixels from Leftmost Endpoint',size=15)
+    plt.xlabel('Position from Front',size=15)
     plt.suptitle("STEPS TAKEN")
     plt.subplots_adjust(left=0.05,right=0.95,top=0.92,wspace=0.30,hspace=0.35)
     mng = plt.get_current_fig_manager()
