@@ -7,7 +7,7 @@ import math
 
 def read_clusMask(waveband, galNum, group):
     # Get Image of Galaxy Arms
-    imgClusMask = cv2.imread("C:/Users/sc123/OneDrive/Desktop/gal/4. FITS/1237660635996291172/{}/{}-K_clusMask-reprojected.png".format(waveband,galNum))
+    imgClusMask = cv2.imread("1237660635996291172/{}/{}-K_clusMask-reprojected.png".format(waveband,galNum))
     dimensions = imgClusMask.shape
     rows = dimensions[0]
     cols = dimensions[1]
