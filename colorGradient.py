@@ -68,7 +68,6 @@ def read_clusMask(waveband, galNum, group):
                                 closestColor = c
                         allPixelLoc[closestColor].add((i,j))
     # allPixelLoc(Dictionary) ->  key(color tuples) : value(set of (i,j location) tuples)
-    # center(tuple) !math.ceil() should already return an INT, which is needed in arm_to_bestArc() range
     return allPixelLoc, (math.ceil(rows/2),math.ceil(cols/2)), rows, cols # {color : {(i,j) , (i,j)} } , (i,j) }
 
 def get_singleArm(galaxyArms, position):
@@ -130,17 +129,19 @@ def arm_to_ArcsCircles(armPosition,center):
 
 
 
-def t(middle, inner, outer):
-    l = []
+def simPhis(middle, inner, outer):
+    phiList = []
     for phi, i , j in middle[1]:
-        l.append([(i,j)])
+        phiList.append((phi,[(i,j)]))
         for Iphi,Ii,Ij in inner[1]:
             if phi == Iphi:
-                l[-1].append((Ii,Ij))
+                phiList[-1][1].append((Ii,Ij))
+                break
         for Ophi,Oi,Oj in outer[1]:
             if phi == Ophi:
-                l[-1].append((Oi,Oj))
-    return l
+                phiList[-1][1].append((Oi,Oj))
+                break
+    return phiList
 
 def unmergedFits(arcList,waveband1,waveband2,galNum):
     hdul = fits.open("{}/{}_{}.fits".format(galNum,galNum,waveband1))
@@ -149,7 +150,7 @@ def unmergedFits(arcList,waveband1,waveband2,galNum):
     hdul = fits.open("{}/{}_{}.fits".format(galNum,galNum,waveband2))
     image_data2 = hdul[0].data # 2-D Numpy Array
     hdul.close()
-    return [image_data1[i,j]-image_data2[i,j] for phi,i,j in arcList]
+    return [(phi,image_data1[i,j]-image_data2[i,j]) for phi,i,j in (arcList)]
 
 def mergedFits(l, waveband1,waveband2,galNum):
     hdul = fits.open("{}/{}_{}.fits".format(galNum,galNum,waveband1))
@@ -158,7 +159,7 @@ def mergedFits(l, waveband1,waveband2,galNum):
     hdul = fits.open("{}/{}_{}.fits".format(galNum,galNum,waveband2))
     image_data2 = hdul[0].data # 2-D Numpy Array
     hdul.close()
-    return [mean([image_data1[i,j]-image_data2[i,j] for i,j in x]) for x in l]
+    return [(phi,mean([image_data1[i,j]-image_data2[i,j] for i,j in x])) for phi,x in (l)]
 
 
 
@@ -173,9 +174,19 @@ def MAIN(waveband1, waveband2, galNum, position, group):
 
     for i in range(1,33):
         if len(arcsCircles_Positions[i][1]) > 50:
+            phiList = simPhis(arcsCircles_Positions[i],arcsCircles_Positions[i-1],arcsCircles_Positions[i+1])
+            merged = mergedFits(phiList, waveband1,waveband2,galNum)
+            mergedPhi = []
+            mergedDifs = []
+            for phi, dif in merged:
+                mergedPhi.append(adjustPhi(phi))
+                mergedDifs.append(dif)
             unmerged = unmergedFits(arcsCircles_Positions[i][1],waveband1,waveband2,galNum)
-            l = t(arcsCircles_Positions[i],arcsCircles_Positions[i-1],arcsCircles_Positions[i+1])
-            merged = mergedFits(l, waveband1,waveband2,galNum)
+            unmergedPhi = []
+            unmergedDifs = []
+            for phi, dif in unmerged:
+                unmergedPhi.append(adjustPhi(phi))
+                unmergedDifs.append(dif)
             mng = plt.get_current_fig_manager()
             mng.window.state('zoomed')
 
@@ -187,88 +198,46 @@ def MAIN(waveband1, waveband2, galNum, position, group):
                 a[ii,ij]=1
             for phi,ii, ij in arcsCircles_Positions[i][1]:
                 a[ii,ij]=3
-            plt.imshow(a)
+            plt.imshow(a) # origin='lower' for "normal" X/Y axis position
+            plt.text(rows*0.6,cols*0.85,"Min θ: {}".format(adjustPhi(arcsCircles_Positions[i][3])),color="white")
+            plt.text(rows*0.6,cols*0.95,"Max θ: {}".format(adjustPhi(arcsCircles_Positions[i][4])),color="white")
             plt.title('Combination')
             plt.subplot(222)
-            plt.plot(unmerged)
+            plt.plot(unmergedPhi,unmergedDifs)
             plt.title("Unmerged Radius {}, {}-{}".format(arcsCircles_Positions[i][0],waveband1,waveband2))
             plt.subplot(224)
-            plt.plot(merged)
+            plt.plot(mergedPhi,mergedDifs)
+            plt.xlabel("θ (degrees)",size=15)
+            plt.ylabel("Flux (nanomaggies)",size=15)
             plt.title("Merged Radius ({},{},{}), {}-{}".format(arcsCircles_Positions[i][0]-1,arcsCircles_Positions[i][0],arcsCircles_Positions[i][0]+1,waveband1,waveband2))
-            plt.show()
+            plt.subplots_adjust(hspace=0.3,wspace=0.4)
+            plt.suptitle("Radius: {}".format(arcsCircles_Positions[i][0]), size=20)
+            plt.savefig("adjustedPhi_{}_{}-{}.pdf".format(arcsCircles_Positions[i][0],waveband1,waveband2))
+            # plt.show()
+            plt.close()
 
     
 ### Helper Functions
 def calcDist(point1, point2):
+    ''' Pythag Theorem '''
     return math.sqrt((point1[0] - point2[0])**2 + (point1[1] - point2[1])**2)  
 
 def roundVal(val):
+    ''' Rounds up or down '''
     if (val - int(val)) >= 0.5:
         return math.ceil(val)
     else:
         return math.floor(val)
 
-### Debugging Function
-def step_visualizer(rows, cols, waveband1, waveband2, galNum, position,pixelLoc1,pixelLoc2,waveband1Arm,waveband2Arm,armPosition,bestArcPosition,leftStartPoint,arcPixelOrdered,circle,subtracted):
-        ### Plot waveband 1 
-    plt.subplot(231)
-    a = np.zeros((rows,cols))
-    for color, pos in pixelLoc1.items():
-        for i,j in pos:
-            a[i,j]=2
-    for i,j in waveband1Arm:
-        a[i,j] = 1
-    plt.imshow(a)
-    plt.title(waveband1)
-        ### Plot waveband 2 
-    plt.subplot(232)
-    a = np.zeros((rows,cols))
-    for color, pos in pixelLoc2.items():
-        for i,j in pos:
-            a[i,j]=2
-    for i,j in waveband2Arm:
-        a[i,j] = 1
-    plt.imshow(a)
-    plt.title(waveband2)
-        ### Plot Merged Arms
-    plt.subplot(233)
-    a = np.zeros((rows,cols))
-    for i, j in armPosition:
-        a[i,j]=2
-    a[position[0],position[1]]=1
-    plt.imshow(a)
-    plt.title('{},{} arm merged at {}'.format(waveband1,waveband2,position))
-        ### Plot waveband Best Arc and left startpoint
-    plt.subplot(234)
-    a = np.zeros((rows,cols))
-    for i, j in armPosition:
-        a[i,j]=2
-    for i, j in circle:
-        a[i,j]=1
-    plt.imshow(a)
-    plt.title('Circle + Arm')
-        ### Plot Combination
-    plt.subplot(235)
-    a = np.zeros((rows,cols))
-    for i, j in armPosition:
-        a[i,j]=2
-    for i, j in circle:
-        a[i,j]=1
-    for i, j in arcPixelOrdered:
-        a[i,j]=3
-    plt.imshow(a)
-    plt.title('Combination')
-        ### Plot wavebands color difference
-    plt.subplot(236)
-    plt.plot(subtracted)
-    plt.title('{}-{} ({})'.format(waveband1.upper(),waveband2.upper(),galNum),size=20)
-    plt.ylabel('Photon Count Dif',size=15)
-    plt.xlabel('Position from Front',size=15)
-    plt.suptitle("STEPS TAKEN")
-    plt.subplots_adjust(left=0.05,right=0.95,top=0.92,wspace=0.30,hspace=0.35)
-    mng = plt.get_current_fig_manager()
-    mng.window.state('zoomed')
-    plt.show()
+def adjustPhi(phi):
+    ''' Adjust Phi to account for the 90degree initial rotation (Easier than changing whole code) '''
+    if (type(phi) is not int):
+        print("phi:({}) was not INT".format(phi))
+        raise TypeError
+    phi-=90
+    if (phi<0):
+        phi = 360+phi
+    return phi
 
 
 
