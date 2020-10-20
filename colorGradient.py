@@ -5,9 +5,10 @@ import cv2
 import math
 from statistics import mean
 
+
 def read_clusMask(waveband, galNum, group):
     # Get Image of Galaxy Arms
-    imgClusMask = cv2.imread("1237660635996291172/{}/{}-K_clusMask-reprojected.png".format(waveband,galNum))
+    imgClusMask = cv2.imread("{}/{}/{}-K_clusMask-reprojected.png".format(galNum,waveband,galNum))
     dimensions = imgClusMask.shape
     rows = dimensions[0]
     cols = dimensions[1]
@@ -141,7 +142,22 @@ def simPhis(middle, inner, outer):
             if phi == Ophi:
                 phiList[-1][1].append((Oi,Oj))
                 break
-    return phiList
+    ### REMOVES MOST DUPLICATE PHIs
+    uniquePhiList = []
+    prev = None
+    same = []
+    for ele in phiList:
+        if ele[1] == prev:
+            same.append(ele)
+        else:
+            if len(same)>0:
+                uniquePhiList.append(same[int(len(same)/2)])
+            same = [ele]
+            prev = ele[1]
+    if len(same)>0:
+        uniquePhiList.append(same[int(len(same)/2)])
+
+    return uniquePhiList
 
 def unmergedFits(arcList,waveband1,waveband2,galNum):
     hdul = fits.open("{}/{}_{}.fits".format(galNum,galNum,waveband1))
@@ -172,7 +188,7 @@ def MAIN(waveband1, waveband2, galNum, position, group):
     armPosition                          = mergeArms(arms=[waveband1Arm,waveband2Arm])
     arcsCircles_Positions                = arm_to_ArcsCircles(armPosition=armPosition, center=center)
 
-    for i in range(1,33):
+    for i in range(1,len(arcsCircles_Positions)-1):
         if len(arcsCircles_Positions[i][1]) > 50:
             phiList = simPhis(arcsCircles_Positions[i],arcsCircles_Positions[i-1],arcsCircles_Positions[i+1])
             merged = mergedFits(phiList, waveband1,waveband2,galNum)
@@ -212,9 +228,10 @@ def MAIN(waveband1, waveband2, galNum, position, group):
             plt.title("Merged Radius ({},{},{}), {}-{}".format(arcsCircles_Positions[i][0]-1,arcsCircles_Positions[i][0],arcsCircles_Positions[i][0]+1,waveband1,waveband2))
             plt.subplots_adjust(hspace=0.3,wspace=0.4)
             plt.suptitle("Radius: {}".format(arcsCircles_Positions[i][0]), size=20)
-            plt.savefig("adjustedPhi_{}_{}-{}.pdf".format(arcsCircles_Positions[i][0],waveband1,waveband2))
-            # plt.show()
+            # plt.savefig("rmv_dupPhis_{}_{}-{}.pdf".format(arcsCircles_Positions[i][0],waveband1,waveband2))
+            plt.show()
             plt.close()
+            
 
     
 ### Helper Functions
@@ -242,4 +259,6 @@ def adjustPhi(phi):
 
 
 if __name__ == "__main__":
+    # MAIN(waveband1='g',waveband2='i',galNum='1237648702986125622', position=(80,70), group=True)
+
     MAIN(waveband1='g',waveband2='i',galNum='1237660635996291172', position=(110,110), group=True)
