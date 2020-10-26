@@ -76,7 +76,7 @@ def get_singleArm(galaxyArms, position):
     closestArm, minDist = None, None
     for arm in galaxyArms.values():
         for point in arm:
-            curDist = calcDist(point,position)
+            curDist = math.dist(point,position)
             if (minDist is None) or (curDist<=minDist):
                 minDist = curDist
                 closestArm = arm
@@ -93,53 +93,68 @@ def mergeArms(arms):
     return armPosition # {(i,j) , (i,j)}
     
 def arm_to_ArcsCircles(armPosition,center):
-    allDists = [calcDist(point,center) for point in armPosition]
+    allDists = [math.dist(point,center) for point in armPosition]
     minRadius = math.ceil(min(allDists))
     maxRadius = math.floor(max(allDists))
     arcsCircles_Positions = []
     for radius in range(minRadius,maxRadius+1):
-        arcsCircles_Positions.append( [radius,[],set(),None,None] )
+        arcsCircles_Positions.append( radiusInfo(radius,[],set(),None,None) )
         minPhi = None
         maxPhi = None
-        # Obtain min/max angle of the arc overlap
-        for phi in range(360):
+        # Obtain startingPhi (eliminates 360-0 overlap)
+        startingPhi=None
+        for phi in range(40,360,40):
+            emptyGap = True
+            for curPhi in range(phi-40,phi+40):
+                radian = curPhi/180*math.pi
+                i = round(radius*math.cos(radian)+center[0])
+                j = round(radius*math.sin(radian)+center[1])
+                curDist = math.dist(center,(i,j))
+                if (curDist >= radius-0.5) and (curDist <= radius+0.5) and ((i,j) in armPosition):
+                    emptyGap = False      
+                    break
+            if (emptyGap):
+                startingPhi=phi
+                break
+        # Obtain min/max angle of the arc overlap (relative to startingPhi)
+        for phi in range(startingPhi,startingPhi+360):
             radian = phi/180*math.pi
-            i = roundVal(radius*math.cos(radian)+center[0])
-            j = roundVal(radius*math.sin(radian)+center[1])
-            curDist = calcDist(center,(i,j))
+            i = round(radius*math.cos(radian)+center[0])
+            j = round(radius*math.sin(radian)+center[1])
+            curDist = math.dist(center,(i,j))
             if (curDist >= radius-0.5) and (curDist <= radius+0.5) and ((i,j) in armPosition):
                 if (minPhi is None):
                     minPhi = phi
                 maxPhi = phi      
-        arcsCircles_Positions[-1][3] = minPhi
-        arcsCircles_Positions[-1][4] = maxPhi         
+        arcsCircles_Positions[-1].minPhi = adjustPhi(minPhi)
+        arcsCircles_Positions[-1].maxPhi = adjustPhi(maxPhi)+360 if adjustPhi(maxPhi)<adjustPhi(minPhi) else adjustPhi(maxPhi)
         # Stores the points for ARC and CIRCLE
-        for phi in range(360):
+        for phi in range(startingPhi,startingPhi+360):
             radian = phi/180*math.pi
-            i = roundVal(radius*math.cos(radian)+center[0])
-            j = roundVal(radius*math.sin(radian)+center[1])
-            curDist = calcDist(center,(i,j))
+            i = round(radius*math.cos(radian)+center[0])
+            j = round(radius*math.sin(radian)+center[1])
+            curDist = math.dist(center,(i,j))
             # If the current point is within 0.5 of the actual radius distance for the CIRCLE
             if (curDist >= radius-0.5) and (curDist <= radius+0.5):
-                arcsCircles_Positions[-1][2].add((i,j))
+                arcsCircles_Positions[-1].circle.add((i,j))
                 # If within the phi range for the ARC
                 if (phi >= minPhi) and (phi <= maxPhi):
-                    arcsCircles_Positions[-1][1].append((phi,i,j))
-    # Returns a list of 5-tuples (radius, [arc], {circle}, minPhi, maxPhi)
+                    arcsCircles_Positions[-1].arc.append((phi,i,j))
+    # Returns a list of radiusInfo objects
     return arcsCircles_Positions
 
 
 
 def simPhis(middle, inner, outer):
     phiList = []
-    for phi, i , j in middle[1]:
+    for phi, i , j in middle.arc:
         phiList.append((phi,[(i,j)]))
-        for Iphi,Ii,Ij in inner[1]:
-            if phi == Iphi:
+        for Iphi,Ii,Ij in inner.arc:
+            if (phi == Iphi):
                 phiList[-1][1].append((Ii,Ij))
                 break
-        for Ophi,Oi,Oj in outer[1]:
-            if phi == Ophi:
+        for Ophi,Oi,Oj in outer.arc:
+            if (phi == Ophi):
                 phiList[-1][1].append((Oi,Oj))
                 break
     ### REMOVES MOST DUPLICATE PHIs
@@ -187,21 +202,21 @@ def MAIN(waveband1, waveband2, galNum, position, group):
 
     armPosition                          = mergeArms(arms=[waveband1Arm,waveband2Arm])
     arcsCircles_Positions                = arm_to_ArcsCircles(armPosition=armPosition, center=center)
-
     for i in range(1,len(arcsCircles_Positions)-1):
-        if len(arcsCircles_Positions[i][1]) > 50:
-            phiList = simPhis(arcsCircles_Positions[i],arcsCircles_Positions[i-1],arcsCircles_Positions[i+1])
+        if (len(arcsCircles_Positions[i].arc) > 50): #and (len(arcsCircles_Positions[i].arc) < 270)
+            curRadiusInfo = arcsCircles_Positions[i]
+            phiList = simPhis(curRadiusInfo,arcsCircles_Positions[i-1],arcsCircles_Positions[i+1])
             merged = mergedFits(phiList, waveband1,waveband2,galNum)
             mergedPhi = []
             mergedDifs = []
-            for phi, dif in merged:
-                mergedPhi.append(adjustPhi(phi))
+            for phi, dif in merged: # adjust phi first, then consider overlap
+                mergedPhi.append(adjustPhi(phi)+360 if adjustPhi(phi)<curRadiusInfo.minPhi else adjustPhi(phi))
                 mergedDifs.append(dif)
-            unmerged = unmergedFits(arcsCircles_Positions[i][1],waveband1,waveband2,galNum)
+            unmerged = unmergedFits(curRadiusInfo.arc,waveband1,waveband2,galNum)
             unmergedPhi = []
             unmergedDifs = []
             for phi, dif in unmerged:
-                unmergedPhi.append(adjustPhi(phi))
+                unmergedPhi.append(adjustPhi(phi)+360 if adjustPhi(phi)<curRadiusInfo.minPhi else adjustPhi(phi))
                 unmergedDifs.append(dif)
             mng = plt.get_current_fig_manager()
             mng.window.state('zoomed')
@@ -210,47 +225,44 @@ def MAIN(waveband1, waveband2, galNum, position, group):
             a = np.zeros((rows,cols))
             for ii, ij in armPosition:
                 a[ii,ij]=2
-            for ii, ij in arcsCircles_Positions[i][2]:
+            for ii, ij in curRadiusInfo.circle:
                 a[ii,ij]=1
-            for phi,ii, ij in arcsCircles_Positions[i][1]:
+            for phi,ii, ij in curRadiusInfo.arc:
                 a[ii,ij]=3
             plt.imshow(a) # origin='lower' for "normal" X/Y axis position
-            plt.text(rows*0.6,cols*0.85,"Min θ: {}".format(adjustPhi(arcsCircles_Positions[i][3])),color="white")
-            plt.text(rows*0.6,cols*0.95,"Max θ: {}".format(adjustPhi(arcsCircles_Positions[i][4])),color="white")
+            plt.text(rows*0.6,cols*0.85,"Min θ: {}".format(curRadiusInfo.minPhi),color="white")
+            plt.text(rows*0.6,cols*0.95,"Max θ: {}".format(curRadiusInfo.maxPhi),color="white")
             plt.title('Combination')
+
             plt.subplot(222)
             plt.plot(unmergedPhi,unmergedDifs)
-            plt.title("Unmerged Radius {}, {}-{}".format(arcsCircles_Positions[i][0],waveband1,waveband2))
+            plt.title("Unmerged Radius {}, {}-{}".format(curRadiusInfo.radius,waveband1,waveband2))
             plt.subplot(224)
+
             plt.plot(mergedPhi,mergedDifs)
             plt.xlabel("θ (degrees)",size=15)
             plt.ylabel("Flux (nanomaggies)",size=15)
-            plt.title("Merged Radius ({},{},{}), {}-{}".format(arcsCircles_Positions[i][0]-1,arcsCircles_Positions[i][0],arcsCircles_Positions[i][0]+1,waveband1,waveband2))
+            plt.title("Merged Radius ({},{},{}), {}-{}".format(curRadiusInfo.radius-1,curRadiusInfo.radius,curRadiusInfo.radius+1,waveband1,waveband2))
             plt.subplots_adjust(hspace=0.3,wspace=0.4)
-            plt.suptitle("Radius: {}".format(arcsCircles_Positions[i][0]), size=20)
-            # plt.savefig("rmv_dupPhis_{}_{}-{}.pdf".format(arcsCircles_Positions[i][0],waveband1,waveband2))
+            plt.suptitle("Radius: {}".format(curRadiusInfo.radius), size=20)
+            # plt.savefig("{}/{}_{}_{}-{}.pdf".format(galNum,position,arcsCircles_Positions[i][0],waveband1,waveband2))
             plt.show()
             plt.close()
+            # break
             
 
-    
+
+class radiusInfo:
+    def __init__(self,radius,arc,circle,minPhi,maxPhi):
+        self.radius = radius
+        self.arc    = arc
+        self.circle = circle
+        self.minPhi = minPhi
+        self.maxPhi = maxPhi
+
 ### Helper Functions
-def calcDist(point1, point2):
-    ''' Pythag Theorem '''
-    return math.sqrt((point1[0] - point2[0])**2 + (point1[1] - point2[1])**2)  
-
-def roundVal(val):
-    ''' Rounds up or down '''
-    if (val - int(val)) >= 0.5:
-        return math.ceil(val)
-    else:
-        return math.floor(val)
-
 def adjustPhi(phi):
-    ''' Adjust Phi to account for the 90degree initial rotation (Easier than changing whole code) '''
-    if (type(phi) is not int):
-        print("phi:({}) was not INT".format(phi))
-        raise TypeError
+    ''' Adjust Phi 90 degrees counterclockwise (Easier than changing whole code) '''
     phi-=90
     if (phi<0):
         phi = 360+phi
@@ -259,6 +271,10 @@ def adjustPhi(phi):
 
 
 if __name__ == "__main__":
-    # MAIN(waveband1='g',waveband2='i',galNum='1237648702986125622', position=(80,70), group=True)
+    MAIN(waveband1='g',waveband2='i',galNum='1237648702986125622', position=(80,70), group=True)
 
-    MAIN(waveband1='g',waveband2='i',galNum='1237660635996291172', position=(110,110), group=True)
+    # MAIN(waveband1='g',waveband2='i',galNum='1237660635996291172', position=(120,140), group=True)
+
+    # imgClusMask = cv2.imread("1237660635996291172/g/1237660635996291172-K_clusMask-reprojected.png")
+    # plt.imshow(imgClusMask)
+    # plt.show()
