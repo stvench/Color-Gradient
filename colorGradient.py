@@ -26,7 +26,7 @@ def read_clusMask(waveband, galNum, group):
     # All similar colors are added to the main color arms
     if group:
         for color, locs in allPixelLoc.items():
-            if len(locs) <= 4:
+            if len(locs) <= 10:
                 for i,j in locs:
                     borderColors = set()
                     D=imgClusMask[i+1,j]
@@ -72,14 +72,16 @@ def read_clusMask(waveband, galNum, group):
     return allPixelLoc, (math.ceil(rows/2),math.ceil(cols/2)), rows, cols # {color : {(i,j) , (i,j)} } , (i,j) }
 
 def get_singleArm(galaxyArms, position):
-    ### Returns closest arm to the inputted position
+    """Returns closest arm to the inputted position (row,col) | (y,x) 
+        -Ignores "small" pixels merged into similar color"""
     closestArm, minDist = None, None
     for arm in galaxyArms.values():
-        for point in arm:
-            curDist = math.dist(point,position)
-            if (minDist is None) or (curDist<=minDist):
-                minDist = curDist
-                closestArm = arm
+        if (len(arm) > 10):
+            for point in arm:
+                curDist = math.dist(point,position)
+                if (minDist is None) or (curDist<=minDist):
+                    minDist = curDist
+                    closestArm = arm
     return closestArm
 
 
@@ -199,7 +201,8 @@ def MAIN(waveband1, waveband2, galNum, position, group):
     waveband1Arm      = get_singleArm(galaxyArms=pixelLoc1, position=position)
     pixelLoc2, center, rows, cols = read_clusMask(waveband=waveband2,galNum=galNum,group=group)
     waveband2Arm      = get_singleArm(galaxyArms=pixelLoc2, position=position)
-
+    
+    
     armPosition                          = mergeArms(arms=[waveband1Arm,waveband2Arm])
     arcsCircles_Positions                = arm_to_ArcsCircles(armPosition=armPosition, center=center)
     for i in range(1,len(arcsCircles_Positions)-1):
@@ -245,7 +248,7 @@ def MAIN(waveband1, waveband2, galNum, position, group):
             plt.title("Merged Radius ({},{},{}), {}-{}".format(curRadiusInfo.radius-1,curRadiusInfo.radius,curRadiusInfo.radius+1,waveband1,waveband2))
             plt.subplots_adjust(hspace=0.3,wspace=0.4)
             plt.suptitle("Radius: {}".format(curRadiusInfo.radius), size=20)
-            # plt.savefig("{}/{}_{}_{}-{}.pdf".format(galNum,position,arcsCircles_Positions[i][0],waveband1,waveband2))
+            # plt.savefig("{}/{}_{}_{}-{}.pdf".format(galNum,position,curRadiusInfo.radius,waveband1,waveband2))
             plt.show()
             plt.close()
             # break
@@ -271,10 +274,28 @@ def adjustPhi(phi):
 
 
 if __name__ == "__main__":
-    MAIN(waveband1='g',waveband2='i',galNum='1237648702986125622', position=(80,70), group=True)
+    """
+                        --------------REMINDER--------------
+    When setting position, uses (ROW,COL) which is equal to (Y,X) in the plotted axis
+    """
 
-    # MAIN(waveband1='g',waveband2='i',galNum='1237660635996291172', position=(120,140), group=True)
 
-    # imgClusMask = cv2.imread("1237660635996291172/g/1237660635996291172-K_clusMask-reprojected.png")
+
+
+
+    ### 1237648702986125622
+    #
+    # MAIN(waveband1='g',waveband2='i',galNum='1237648702986125622', position=(80,70), group=True)      #G Dark Green
+    # MAIN(waveband1='g',waveband2='i',galNum='1237648702986125622', position=(100,100), group=True)    #G Light Green
+
+
+    ### 1237660635996291172
+    #
+    # MAIN(waveband1='g',waveband2='i',galNum='1237660635996291172', position=(110,110), group=True)    #G GREEN
+    # MAIN(waveband1='g',waveband2='i',galNum='1237660635996291172', position=(120,140), group=True)    #G PURPLE
+    # MAIN(waveband1='g',waveband2='i',galNum='1237660635996291172', position=(140,120), group=True)    #G ORANGE
+
+    
+    # imgClusMask = cv2.imread("1237648702986125622/g/1237648702986125622-K_clusMask-reprojected.png")
     # plt.imshow(imgClusMask)
     # plt.show()
