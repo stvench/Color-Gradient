@@ -229,63 +229,59 @@ def automateTest(waveband1, waveband2, galNum):
     Returns:
         None (but plots graph)
     """
-    try:
-        group = True
-        pixelLoc1, center, rows, cols = read_clusMask(waveband=waveband1,galNum=galNum,group=group)
-        waveband1Arm      = get_largestArm(galaxyArms=pixelLoc1)
-        pixelLoc2, center, rows, cols = read_clusMask(waveband=waveband2,galNum=galNum,group=group)
-        waveband2Arm      = get_largestArm(galaxyArms=pixelLoc2)
-        
-        armPosition                          = mergeArms(waveband1Arm=waveband1Arm,waveband2Arm=waveband2Arm)
-        arcsCircles_Positions                = arm_to_ArcsCircles(armPosition=armPosition, center=center)
-        for i in range(1,len(arcsCircles_Positions)-1):
-            if (len(arcsCircles_Positions[i].arc) > 30): #and (len(arcsCircles_Positions[i].arc) < 270)
-                curRadiusInfo = arcsCircles_Positions[i]
-                phiList = simPhis(curRadiusInfo,arcsCircles_Positions[i-1],arcsCircles_Positions[i+1])
-                merged = mergedFits(phiList, waveband1,waveband2,galNum)
-                mergedPhi = []
-                mergedDifs = []
-                for phi, dif in merged: # adjust phi first, then consider overlap
-                    mergedPhi.append(adjustPhi(phi)+360 if adjustPhi(phi)<curRadiusInfo.minPhi else adjustPhi(phi))
-                    mergedDifs.append(dif)
-                unmerged = unmergedFits(curRadiusInfo.arc,waveband1,waveband2,galNum)
-                unmergedPhi = []
-                unmergedDifs = []
-                for phi, dif in unmerged:
-                    unmergedPhi.append(adjustPhi(phi)+360 if adjustPhi(phi)<curRadiusInfo.minPhi else adjustPhi(phi))
-                    unmergedDifs.append(dif)
+    group = True
+    pixelLoc1, center, rows, cols = read_clusMask(waveband=waveband1,galNum=galNum,group=group)
+    waveband1Arm      = get_largestArm(galaxyArms=pixelLoc1)
+    pixelLoc2, center, rows, cols = read_clusMask(waveband=waveband2,galNum=galNum,group=group)
+    waveband2Arm      = get_largestArm(galaxyArms=pixelLoc2)
+    
+    armPosition                          = mergeArms(waveband1Arm=waveband1Arm,waveband2Arm=waveband2Arm)
+    arcsCircles_Positions                = arm_to_ArcsCircles(armPosition=armPosition, center=center)
+    for i in range(1,len(arcsCircles_Positions)-1):
+        if (len(arcsCircles_Positions[i].arc) > 30): #and (len(arcsCircles_Positions[i].arc) < 270)
+            curRadiusInfo = arcsCircles_Positions[i]
+            phiList = simPhis(curRadiusInfo,arcsCircles_Positions[i-1],arcsCircles_Positions[i+1])
+            merged = mergedFits(phiList, waveband1,waveband2,galNum)
+            mergedPhi = []
+            mergedDifs = []
+            for phi, dif in merged: # adjust phi first, then consider overlap
+                mergedPhi.append(adjustPhi(phi)+360 if adjustPhi(phi)<curRadiusInfo.minPhi else adjustPhi(phi))
+                mergedDifs.append(dif)
+            unmerged = unmergedFits(curRadiusInfo.arc,waveband1,waveband2,galNum)
+            unmergedPhi = []
+            unmergedDifs = []
+            for phi, dif in unmerged:
+                unmergedPhi.append(adjustPhi(phi)+360 if adjustPhi(phi)<curRadiusInfo.minPhi else adjustPhi(phi))
+                unmergedDifs.append(dif)
 
-                plt.subplot(121)
-                a = np.zeros((rows,cols))
-                for ii, ij in armPosition:
-                    a[ii,ij]=2
-                for ii, ij in curRadiusInfo.circle:
-                    a[ii,ij]=1
-                for phi,ii, ij in curRadiusInfo.arc:
-                    a[ii,ij]=3
-                plt.imshow(a) # origin='lower' for "normal" X/Y axis position
-                plt.text(rows*0.6,cols*0.85,"Min θ: {}".format(curRadiusInfo.minPhi),color="white")
-                plt.text(rows*0.6,cols*0.95,"Max θ: {}".format(curRadiusInfo.maxPhi),color="white")
-                plt.title('Combination')
+            plt.subplot(121)
+            a = np.zeros((rows,cols))
+            for ii, ij in armPosition:
+                a[ii,ij]=2
+            for ii, ij in curRadiusInfo.circle:
+                a[ii,ij]=1
+            for phi,ii, ij in curRadiusInfo.arc:
+                a[ii,ij]=3
+            plt.imshow(a) # origin='lower' for "normal" X/Y axis position
+            plt.text(rows*0.6,cols*0.85,"Min θ: {}".format(curRadiusInfo.minPhi),color="white")
+            plt.text(rows*0.6,cols*0.95,"Max θ: {}".format(curRadiusInfo.maxPhi),color="white")
+            plt.title('Combination')
 
-                plt.subplot(222)
-                plt.plot(unmergedPhi,unmergedDifs)
-                plt.title("Unmerged Radius {}, {}-{}".format(curRadiusInfo.radius,waveband1,waveband2))
-                plt.subplot(224)
+            plt.subplot(222)
+            plt.plot(unmergedPhi,unmergedDifs)
+            plt.title("Unmerged Radius {}, {}-{}".format(curRadiusInfo.radius,waveband1,waveband2))
+            plt.subplot(224)
 
-                plt.plot(mergedPhi,mergedDifs)
-                plt.xlabel("θ (degrees)",size=15)
-                plt.ylabel("Flux (nanomaggies)",size=15)
-                plt.title("Merged Radius ({},{},{}), {}-{}".format(curRadiusInfo.radius-1,curRadiusInfo.radius,curRadiusInfo.radius+1,waveband1,waveband2))
-                plt.subplots_adjust(hspace=0.3,wspace=0.4)
-                plt.suptitle("Radius: {}".format(curRadiusInfo.radius), size=20)
-                plt.savefig("tests/{}-_{}_{}-{}.pdf".format(galNum,curRadiusInfo.radius,waveband1,waveband2))
-                #plt.show()
-                plt.close()
-                break
-    except:
-        print("{} {}-{} Failed".format(galNum,waveband1,waveband2))
-        print("-------------------------------------------")
+            plt.plot(mergedPhi,mergedDifs)
+            plt.xlabel("θ (degrees)",size=15)
+            plt.ylabel("Flux (nanomaggies)",size=15)
+            plt.title("Merged Radius ({},{},{}), {}-{}".format(curRadiusInfo.radius-1,curRadiusInfo.radius,curRadiusInfo.radius+1,waveband1,waveband2))
+            plt.subplots_adjust(hspace=0.3,wspace=0.4)
+            plt.suptitle("Radius: {}".format(curRadiusInfo.radius), size=20)
+            plt.savefig("tests/{}-_{}_{}-{}.pdf".format(galNum,curRadiusInfo.radius,waveband1,waveband2))
+            #plt.show()
+            plt.close()
+            break
 
 
 
@@ -325,7 +321,11 @@ if __name__ == "__main__":
     galaxy = galFile.readline()
     while galaxy:
         print(type(galaxy))
-        automateTest(waveband1='g',waveband2='i',galNum=galaxy)
+        try:
+            automateTest(waveband1='g',waveband2='i',galNum=galaxy)
+        except:
+            print(galaxy," FAILED")
+            print("-------------------------------------------")
         galaxy = galFile.readline()
         break
     galFile.close()
