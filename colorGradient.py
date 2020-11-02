@@ -83,7 +83,7 @@ def get_closestArm(galaxyArms, position):
     for arm in galaxyArms.values():
         if (len(arm) > 10):
             for point in arm:
-                curDist = math.dist(point,position)
+                curDist = calcDist(point,position)
                 if (minDist is None) or (curDist<=minDist):
                     minDist = curDist
                     closestArm = arm
@@ -132,7 +132,7 @@ def arm_to_ArcsCircles(armPosition,center):
                 radian = curPhi/180*math.pi
                 i = round(radius*math.cos(radian)+center[0])
                 j = round(radius*math.sin(radian)+center[1])
-                curDist = math.dist(center,(i,j))
+                curDist = calcDist(center,(i,j))
                 if (curDist >= radius-0.5) and (curDist <= radius+0.5) and ((i,j) in armPosition):
                     emptyGap = False      
                     break
@@ -144,7 +144,7 @@ def arm_to_ArcsCircles(armPosition,center):
             radian = phi/180*math.pi
             i = round(radius*math.cos(radian)+center[0])
             j = round(radius*math.sin(radian)+center[1])
-            curDist = math.dist(center,(i,j))
+            curDist = calcDist(center,(i,j))
             if (curDist >= radius-0.5) and (curDist <= radius+0.5) and ((i,j) in armPosition):
                 if (minPhi is None):
                     minPhi = phi
@@ -156,7 +156,7 @@ def arm_to_ArcsCircles(armPosition,center):
             radian = phi/180*math.pi
             i = round(radius*math.cos(radian)+center[0])
             j = round(radius*math.sin(radian)+center[1])
-            curDist = math.dist(center,(i,j))
+            curDist = calcDist(center,(i,j))
             # If the current point is within 0.5 of the actual radius distance for the CIRCLE
             if (curDist >= radius-0.5) and (curDist <= radius+0.5):
                 arcsCircles_Positions[-1].circle.add((i,j))
@@ -343,7 +343,7 @@ def automateTest(waveband1, waveband2, galNum):
             # plt.savefig("{}/{}_{}_{}-{}.pdf".format(galNum,position,curRadiusInfo.radius,waveband1,waveband2))
             plt.show()
             plt.close()
-            # break
+            break
     # except:
     #     print("{} {}-{} Failed".format(galNum,waveband1,waveband2))
     #     print("-------------------------------------------")
@@ -366,7 +366,8 @@ def adjustPhi(phi):
         phi = 360+phi
     return phi
 
-
+def calcDist(point,center):
+    return math.sqrt((point[0]-center[0])**2+(point[1]-center[1])**2)
 
 if __name__ == "__main__":
     """
@@ -404,7 +405,6 @@ if __name__ == "__main__":
     automateTest(waveband1='g',waveband2='i',galNum='1237648705658486867')
     automateTest(waveband1='g',waveband2='i',galNum='1237648704586514654')
     automateTest(waveband1='g',waveband2='i',galNum='1237648702986125622')
-
 
 
 
