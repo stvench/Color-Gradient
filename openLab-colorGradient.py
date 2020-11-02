@@ -279,7 +279,7 @@ def automateTest(waveband1, waveband2, galNum):
                 plt.title("Merged Radius ({},{},{}), {}-{}".format(curRadiusInfo.radius-1,curRadiusInfo.radius,curRadiusInfo.radius+1,waveband1,waveband2))
                 plt.subplots_adjust(hspace=0.3,wspace=0.4)
                 plt.suptitle("Radius: {}".format(curRadiusInfo.radius), size=20)
-                # plt.savefig("{}-_{}_{}-{}.pdf".format(galNum,curRadiusInfo.radius,waveband1,waveband2))
+                plt.savefig("tests/{}-_{}_{}-{}.pdf".format(galNum,curRadiusInfo.radius,waveband1,waveband2))
                 #plt.show()
                 plt.close()
                 break
@@ -314,41 +314,26 @@ if __name__ == "__main__":
                         --------------REMINDER--------------
     When setting position, uses (ROW,COL) which is equal to (Y,X) in the plotted axis
     """
-    ############## MANUALLY CHECK POSITIONING
-    ### 1237648702986125622
-    #
-    # manualTest(waveband1='g',waveband2='i',galNum='1237648702986125622', position=(80,70), group=True)      #G Dark Green
-    # manualTest(waveband1='g',waveband2='i',galNum='1237648702986125622', position=(100,100), group=True)    #G Light Green
-
-
-    ### 1237648704586514654
-    #
-    # manualTest(waveband1='g',waveband2='i',galNum='1237648704586514654', position=(90,75), group=True)      #G Top Red
-    # manualTest(waveband1='g',waveband2='i',galNum='1237648704586514654', position=(100,120), group=True)    #G Bottom Orange
-
-
-    ### 1237648705658486867
-    #
-    # manualTest(waveband1='g',waveband2='i',galNum='1237648705658486867', position=(45,45), group=True)      #G Red
-
-
-    ### 1237660635996291172
-    #
-    # manualTest(waveband1='g',waveband2='i',galNum='1237660635996291172', position=(110,110), group=True)    #G GREEN
-    # manualTest(waveband1='g',waveband2='i',galNum='1237660635996291172', position=(120,140), group=True)    #G PURPLE
-    # manualTest(waveband1='g',waveband2='i',galNum='1237660635996291172', position=(140,120), group=True)    #G ORANGE
-
-
+    print( "REMEMBER TO 'module load python'")
 
     ############## AUTOMATE POSITIONING
     #automateTest(waveband1='g',waveband2='i',galNum='1237660635996291172')
-    automateTest(waveband1='g',waveband2='i',galNum='1237648705658486867')
+    #automateTest(waveband1='g',waveband2='i',galNum='1237648705658486867')
     #automateTest(waveband1='g',waveband2='i',galNum='1237648704586514654')
     #automateTest(waveband1='g',waveband2='i',galNum='1237648702986125622')
+    galFile = open('spGal.txt','r')
+    galaxy = galFile.readline()
+    while galaxy:
+        print(type(galaxy))
+        automateTest(waveband1='g',waveband2='i',galNum=galaxy)
+        galaxy = galFile.readline()
+        break
+    galFile.close()
+	
 
 
 
 
-    # imgClusMask = cv2.imread("1237648705658486867/i/1237648705658486867-K_clusMask-reprojected.png")
-    # plt.imshow(imgClusMask)
-    # plt.show()
+
+
+
