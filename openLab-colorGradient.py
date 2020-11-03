@@ -320,14 +320,13 @@ if __name__ == "__main__":
     galFile = open('spGal.txt','r')
     galaxy = galFile.readline()
     while galaxy:
-        print(type(galaxy))
+        print("PDFING ",galaxy)
         try:
-            automateTest(waveband1='g',waveband2='i',galNum=galaxy)
+            automateTest(waveband1='g',waveband2='i',galNum=galaxy.rstrip("\n"))
         except:
             print(galaxy," FAILED")
             print("-------------------------------------------")
         galaxy = galFile.readline()
-        break
     galFile.close()
 	
 
