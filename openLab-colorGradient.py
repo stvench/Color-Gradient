@@ -33,46 +33,48 @@ def read_clusMask(waveband, galNum, group):
         for color, locs in allPixelLoc.items():
             if len(locs) <= 10:
                 for i,j in locs:
-                    borderColors = set()
-                    D=imgClusMask[i+1,j]
-                    if np.any(D != [0,0,0]):
-                        borderColors.add(tuple(D))
-                    U=imgClusMask[i-1,j]
-                    if np.any(U != [0,0,0]):
-                        borderColors.add(tuple(U))
-                    R=imgClusMask[i,j+1]
-                    if np.any(R != [0,0,0]):
-                        borderColors.add(tuple(R))
-                    L=imgClusMask[i,j-1]
-                    if np.any(L != [0,0,0]):
-                        borderColors.add(tuple(L))
-                    DR=imgClusMask[i+1,j+1]
-                    if np.any(DR != [0,0,0]):
-                        borderColors.add(tuple(DR))
-                    DL=imgClusMask[i+1,j-1]
-                    if np.any(DL != [0,0,0]):
-                        borderColors.add(tuple(DL))
-                    UR=imgClusMask[i-1,j+1]
-                    if np.any(UR != [0,0,0]):
-                        borderColors.add(tuple(UR))
-                    UL=imgClusMask[i-1,j-1]
-                    if np.any(UL != [0,0,0]):
-                        borderColors.add(tuple(UL))
-                    # Remove any "small arm" colors
-                    borderColors.discard(color)
-                    for col in borderColors.copy():
-                        if (len(allPixelLoc[col]) <= 4):
-                            borderColors.remove(col)
-                    # Calculate most similar, doesn't work if 1.(it is 2 pxiels away from nearest "large" arm) OR 2.(closest border color happens to be another border color)
-                    if len(borderColors) != 0:
-                        closestColor = None
-                        colorDif = None
-                        for c in borderColors:
-                            curDif = sum([abs(int(color[index])-int(c[index])) for index in range(3)])
-                            if (colorDif is None) or (curDif <= colorDif):
-                                colorDif = curDif
-                                closestColor = c
-                        allPixelLoc[closestColor].add((i,j))
+                    # Ignore border pixels (QUIZ FIX BUT NOT THE BEST: GETS RID OF IndexErrors)
+                    if (i != 0) and (i != rows) and ( j!= 0) and (i != cols):
+                        borderColors = set()
+                        D=imgClusMask[i+1,j]
+                        if np.any(D != [0,0,0]):
+                            borderColors.add(tuple(D))
+                        U=imgClusMask[i-1,j]
+                        if np.any(U != [0,0,0]):
+                            borderColors.add(tuple(U))
+                        R=imgClusMask[i,j+1]
+                        if np.any(R != [0,0,0]):
+                            borderColors.add(tuple(R))
+                        L=imgClusMask[i,j-1]
+                        if np.any(L != [0,0,0]):
+                            borderColors.add(tuple(L))
+                        DR=imgClusMask[i+1,j+1]
+                        if np.any(DR != [0,0,0]):
+                            borderColors.add(tuple(DR))
+                        DL=imgClusMask[i+1,j-1]
+                        if np.any(DL != [0,0,0]):
+                            borderColors.add(tuple(DL))
+                        UR=imgClusMask[i-1,j+1]
+                        if np.any(UR != [0,0,0]):
+                            borderColors.add(tuple(UR))
+                        UL=imgClusMask[i-1,j-1]
+                        if np.any(UL != [0,0,0]):
+                            borderColors.add(tuple(UL))
+                        # Remove any "small arm" colors
+                        borderColors.discard(color)
+                        for col in borderColors.copy():
+                            if (len(allPixelLoc[col]) <= 4):
+                                borderColors.remove(col)
+                        # Calculate most similar, doesn't work if 1.(it is 2 pxiels away from nearest "large" arm) OR 2.(closest border color happens to be another border color)
+                        if len(borderColors) != 0:
+                            closestColor = None
+                            colorDif = None
+                            for c in borderColors:
+                                curDif = sum([abs(int(color[index])-int(c[index])) for index in range(3)])
+                                if (colorDif is None) or (curDif <= colorDif):
+                                    colorDif = curDif
+                                    closestColor = c
+                            allPixelLoc[closestColor].add((i,j))
     # allPixelLoc(Dictionary) ->  key(color tuples) : value(set of (i,j location) tuples)
     return allPixelLoc, (math.ceil(rows/2),math.ceil(cols/2)), rows, cols # {color : {(i,j) , (i,j)} } , (i,j) }
 
@@ -99,7 +101,6 @@ def get_largestArm(galaxyArms):
             largestArmSize = len(positions)
             largestArmPosition = positions
     return largestArmPosition
-
 
 
 
@@ -168,7 +169,6 @@ def arm_to_ArcsCircles(armPosition,center):
 
 
 
-
 def simPhis(middle, inner, outer):
     phiList = []
     for phi, i , j in middle.arc:
@@ -218,7 +218,6 @@ def mergedFits(l, waveband1,waveband2,galNum):
 
 
 
-
 def automateTest(waveband1, waveband2, galNum):
     """
     WAVEBANDS ["u","g","r","i","z"]     
@@ -238,7 +237,7 @@ def automateTest(waveband1, waveband2, galNum):
     armPosition                          = mergeArms(waveband1Arm=waveband1Arm,waveband2Arm=waveband2Arm)
     arcsCircles_Positions                = arm_to_ArcsCircles(armPosition=armPosition, center=center)
     for i in range(1,len(arcsCircles_Positions)-1):
-        if (len(arcsCircles_Positions[i].arc) > 30): #and (len(arcsCircles_Positions[i].arc) < 270)
+        if (len(arcsCircles_Positions[i].arc) > 30) and (len(arcsCircles_Positions[i].arc) < 270):
             curRadiusInfo = arcsCircles_Positions[i]
             phiList = simPhis(curRadiusInfo,arcsCircles_Positions[i-1],arcsCircles_Positions[i+1])
             merged = mergedFits(phiList, waveband1,waveband2,galNum)
@@ -278,8 +277,8 @@ def automateTest(waveband1, waveband2, galNum):
             plt.title("Merged Radius ({},{},{}), {}-{}".format(curRadiusInfo.radius-1,curRadiusInfo.radius,curRadiusInfo.radius+1,waveband1,waveband2))
             plt.subplots_adjust(hspace=0.3,wspace=0.4)
             plt.suptitle("Radius: {}".format(curRadiusInfo.radius), size=20)
-            plt.savefig("tests/{}-_{}_{}-{}.pdf".format(galNum,curRadiusInfo.radius,waveband1,waveband2))
-            #plt.show()
+            # plt.savefig("tests/{}-_{}_{}-{}.pdf".format(galNum,curRadiusInfo.radius,waveband1,waveband2))
+            # plt.show()
             plt.close()
             break
 
@@ -310,22 +309,17 @@ if __name__ == "__main__":
                         --------------REMINDER--------------
     When setting position, uses (ROW,COL) which is equal to (Y,X) in the plotted axis
     """
-    print( "REMEMBER TO 'module load python'")
-
+    print("'module load python' if doesn't work?")
     ############## AUTOMATE POSITIONING
-    #automateTest(waveband1='g',waveband2='i',galNum='1237660635996291172')
-    #automateTest(waveband1='g',waveband2='i',galNum='1237648705658486867')
-    #automateTest(waveband1='g',waveband2='i',galNum='1237648704586514654')
-    #automateTest(waveband1='g',waveband2='i',galNum='1237648702986125622')
     galFile = open('spGal.txt','r')
     galaxy = galFile.readline()
     while galaxy:
+        print("-------------------------------------------")
         print("PDFING ",galaxy)
         try:
             automateTest(waveband1='g',waveband2='i',galNum=galaxy.rstrip("\n"))
         except:
-            print(galaxy," FAILED")
-            print("-------------------------------------------")
+            print("FAILED")
         galaxy = galFile.readline()
     galFile.close()
 	
