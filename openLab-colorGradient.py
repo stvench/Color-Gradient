@@ -34,7 +34,7 @@ def read_clusMask(waveband, galNum, group):
             if len(locs) <= 10:
                 for i,j in locs:
                     # Ignore border pixels (QUIZ FIX BUT NOT THE BEST: GETS RID OF IndexErrors)
-                    if (i != 0) and (i != rows) and ( j!= 0) and (i != cols):
+                    if (i != 0) and (i != rows-1) and ( j!= 0) and (i != cols-1):
                         borderColors = set()
                         D=imgClusMask[i+1,j]
                         if np.any(D != [0,0,0]):
@@ -277,7 +277,7 @@ def automateTest(waveband1, waveband2, galNum):
             plt.title("Merged Radius ({},{},{}), {}-{}".format(curRadiusInfo.radius-1,curRadiusInfo.radius,curRadiusInfo.radius+1,waveband1,waveband2))
             plt.subplots_adjust(hspace=0.3,wspace=0.4)
             plt.suptitle("Radius: {}".format(curRadiusInfo.radius), size=20)
-            # plt.savefig("tests/{}-_{}_{}-{}.pdf".format(galNum,curRadiusInfo.radius,waveband1,waveband2))
+            plt.savefig("tests/{}-_{}_{}-{}.pdf".format(galNum,curRadiusInfo.radius,waveband1,waveband2))
             # plt.show()
             plt.close()
             break
@@ -318,8 +318,11 @@ if __name__ == "__main__":
         print("PDFING ",galaxy)
         try:
             automateTest(waveband1='g',waveband2='i',galNum=galaxy.rstrip("\n"))
+        except TypeError:
+            pass
         except:
             print("FAILED")
+            raise
         galaxy = galFile.readline()
     galFile.close()
 	
