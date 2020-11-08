@@ -266,9 +266,11 @@ def automateTest(waveband1, waveband2, galNum):
             plt.title("Merged Radius ({},{},{}), {}-{}".format(curRadiusInfo.radius-1,curRadiusInfo.radius,curRadiusInfo.radius+1,waveband1,waveband2))
             plt.subplots_adjust(hspace=0.3,wspace=0.4)
             plt.suptitle("Radius: {}".format(curRadiusInfo.radius), size=20)
-            plt.savefig("tests/{}-_{}_{}-{}.pdf".format(galNum,curRadiusInfo.radius,waveband1,waveband2))
+            # plt.savefig("tests/{}-_{}_{}-{}.pdf".format(galNum,curRadiusInfo.radius,waveband1,waveband2))
+            plt.savefig("good5full/{}-_{}_{}-{}.pdf".format(galNum,curRadiusInfo.radius,waveband1,waveband2))
+            # plt.show()
             plt.close()
-            break
+            # break
 
 
 
@@ -313,7 +315,8 @@ if __name__ == "__main__":
             ### SHOULD WRITE TO FILE ABOUT THE ERROR INSTEAD
             print(err)
         except:
-            print("_____FAILED_____")
+            print("FAILED")
+            print("Make sure destination folder exists?)
             raise
         galaxy = galFile.readline()
     galFile.close()
