@@ -113,8 +113,7 @@ def mergeArms(waveband1Arm,waveband2Arm):
     if (arm1Overlap > overlapThreshold) or (arm2Overlap > overlapThreshold):
         return waveband1Arm.union(waveband2Arm)
     else:
-        print("{} or {} <= {} Threshold".format(arm1Overlap,arm2Overlap,overlapThreshold))
-        raise TypeError
+        raise ThresholdError("{} or {} <= {} Threshold".format(arm1Overlap,arm2Overlap,overlapThreshold))
     
 def arm_to_ArcsCircles(armPosition,center):
     allDists = [calcDist(point,center) for point in armPosition]
@@ -195,7 +194,6 @@ def simPhis(middle, inner, outer):
             prev = ele[1]
     if len(same)>0:
         uniquePhiList.append(same[int(len(same)/2)])
-
     return uniquePhiList
 
 def unmergedFits(arcList,waveband1,waveband2,galNum):
@@ -219,15 +217,6 @@ def mergedFits(l, waveband1,waveband2,galNum):
 
 
 def automateTest(waveband1, waveband2, galNum):
-    """
-    WAVEBANDS ["u","g","r","i","z"]     
-    Parameters:
-        waveband1 (str) : From WAVEBANDS
-        waveband2 (str) : From WAVEBANDS
-        galNum    (int) :
-    Returns:
-        None (but plots graph)
-    """
     group = True
     pixelLoc1, center, rows, cols = read_clusMask(waveband=waveband1,galNum=galNum,group=group)
     waveband1Arm      = get_largestArm(galaxyArms=pixelLoc1)
@@ -278,7 +267,6 @@ def automateTest(waveband1, waveband2, galNum):
             plt.subplots_adjust(hspace=0.3,wspace=0.4)
             plt.suptitle("Radius: {}".format(curRadiusInfo.radius), size=20)
             plt.savefig("tests/{}-_{}_{}-{}.pdf".format(galNum,curRadiusInfo.radius,waveband1,waveband2))
-            # plt.show()
             plt.close()
             break
 
@@ -292,9 +280,13 @@ class radiusInfo:
         self.minPhi = minPhi
         self.maxPhi = maxPhi
 
+class ThresholdError(Exception):
+    pass
+
+
 ### Helper Functions
 def adjustPhi(phi):
-    ''' Adjust Phi 90 degrees counterclockwise (Easier than changing whole code) '''
+    ''' Adjust Phi 90 degrees counterclockwise '''
     phi-=90
     if (phi<0):
         phi = 360+phi
@@ -307,28 +299,24 @@ def calcDist(point,center):
 if __name__ == "__main__":
     """
                         --------------REMINDER--------------
-    When setting position, uses (ROW,COL) which is equal to (Y,X) in the plotted axis
+    'module load python' if doesn't work?
     """
-    print("'module load python' if doesn't work?")
-    ############## AUTOMATE POSITIONING
+
     galFile = open('spGal.txt','r')
     galaxy = galFile.readline()
     while galaxy:
         print("-------------------------------------------")
-        print("PDFING ",galaxy)
+        print(galaxy)
         try:
             automateTest(waveband1='g',waveband2='i',galNum=galaxy.rstrip("\n"))
-        except TypeError:
-            pass
+        except ThresholdError as err:
+            ### SHOULD WRITE TO FILE ABOUT THE ERROR INSTEAD
+            print(err)
         except:
-            print("FAILED")
+            print("_____FAILED_____")
             raise
         galaxy = galFile.readline()
     galFile.close()
-	
-
-
-
 
 
 
