@@ -267,10 +267,10 @@ def automateTest(waveband1, waveband2, galNum):
             plt.subplots_adjust(hspace=0.3,wspace=0.4)
             plt.suptitle("Radius: {}".format(curRadiusInfo.radius), size=20)
             # plt.savefig("tests/{}-_{}_{}-{}.pdf".format(galNum,curRadiusInfo.radius,waveband1,waveband2))
-            plt.savefig("good5full/{}-_{}_{}-{}.pdf".format(galNum,curRadiusInfo.radius,waveband1,waveband2))
+            # plt.savefig("good5full/{}-_{}_{}-{}.pdf".format(galNum,curRadiusInfo.radius,waveband1,waveband2))
             # plt.show()
             plt.close()
-            # break
+            break
 
 
 
