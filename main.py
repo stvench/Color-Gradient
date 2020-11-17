@@ -17,13 +17,20 @@ class ThresholdError(Exception):
 
 
 def main(waveband1, waveband2, galNum):
-    GROUP = True
 
     minMaxRatio, minorAxis, majorAxis, axisRadians, inputCenterR, inputCenterC = inputFiles.read_arcsTSV(galNum)
-    pixelLoc, rows, cols       = inputFiles.read_clusMask(waveband=waveband1,galNum=galNum,group=GROUP)
+    pixelLoc, rows, cols       = inputFiles.read_clusMask(waveband=waveband1,galNum=galNum,group=True)
     armsPixels    = createStructs.get_largestArm(galaxyArms=pixelLoc)
 
     arcsEllipse_Positions = createStructs.arm_to_ArcsEllipse(majorAxis=majorAxis, minMaxRatio=minMaxRatio, axisRadians=axisRadians, armsPixels=armsPixels, center=(inputCenterR, inputCenterR))
+    
+    # a = filePath = f"C:/Users/sc123/Desktop/gal/5. NonCircular FITS/Progress/TestsGalaxies/{galNum}/{waveband1}/{galNum}-A_input.png"
+    # a = cv2.imread(filePath)
+    # for i,j in arcsEllipse_Positions[-2].ellipse:
+    #     a[i,j] = (0,255,255)
+    # plt.imshow(a)
+    # plt.show()
+    
     for i in range(1,len(arcsEllipse_Positions)-1):
         if (len(arcsEllipse_Positions[i].arc) > 30) and (len(arcsEllipse_Positions[i].arc) < 270):
             curEllipseInfo = arcsEllipse_Positions[i]
@@ -31,14 +38,14 @@ def main(waveband1, waveband2, galNum):
             merged = inputFiles.mergedFits(thetaList, waveband1,waveband2,galNum)
             mergedTheta = []
             mergedDifs = []
-            for theta, dif in merged: # adjust phi first, then consider overlap
-                mergedTheta.append(theta)
+            for theta, dif in merged: # adjust theta first, then consider overlap
+                mergedTheta.append(createStructs.adjustTheta(theta)+360 if createStructs.adjustTheta(theta)<curEllipseInfo.minTheta else createStructs.adjustTheta(theta))
                 mergedDifs.append(dif)
             unmerged = inputFiles.unmergedFits(curEllipseInfo.arc,waveband1,waveband2,galNum)
             unmergedTheta = []
             unmergedDifs = []
             for theta, dif in unmerged:
-                unmergedTheta.append(theta)
+                unmergedTheta.append(createStructs.adjustTheta(theta)+360 if createStructs.adjustTheta(theta)<curEllipseInfo.minTheta else createStructs.adjustTheta(theta))
                 unmergedDifs.append(dif)
 
             mng = plt.get_current_fig_manager()
@@ -66,7 +73,7 @@ def main(waveband1, waveband2, galNum):
             plt.ylabel("Flux (nanomaggies)",size=15)
             plt.title("Merged MajAx ({},{},{}), {}-{}".format(curEllipseInfo.majorAxisLen-2,curEllipseInfo.majorAxisLen,curEllipseInfo.majorAxisLen+2,waveband1,waveband2))
             plt.subplots_adjust(hspace=0.3,wspace=0.4)
-            plt.suptitle("MajorAxis: {}".format(curEllipseInfo.majorAxisLen), size=20)
+            plt.suptitle("MajorAxis: {} | MinorAxis: {:.3f}".format(curEllipseInfo.majorAxisLen, curEllipseInfo.majorAxisLen*minMaxRatio), size=20)
             # plt.savefig("{}-_{}_{}-{}.pdf".format(galNum,curEllipseInfo.majorAxisLen,waveband1,waveband2))
             plt.show()
             plt.close()

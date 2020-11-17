@@ -52,8 +52,8 @@ def arm_to_ArcsEllipse(majorAxis, minMaxRatio, axisRadians, armsPixels, center):
                     if (minTheta is None):
                         minTheta = curTheta
                     maxTheta = curTheta      
-            arcsEllipse_Positions[-1].minTheta = minTheta
-            arcsEllipse_Positions[-1].maxTheta = maxTheta
+            arcsEllipse_Positions[-1].minTheta = adjustTheta(minTheta)
+            arcsEllipse_Positions[-1].maxTheta = adjustTheta(maxTheta)+360 if adjustTheta(maxTheta)<adjustTheta(minTheta) else adjustTheta(maxTheta)
             # Stores the points for ARC and ELLIPSE
             for curTheta in range(startingTheta,startingTheta+360):
                 i,j = calcElpsPoint(a, a*minMaxRatio, axisRadians, curTheta, center)
@@ -118,3 +118,11 @@ class ellipseInfo:
         self.ellipse        = ellipse
         self.minTheta       = minTheta
         self.maxTheta       = maxTheta
+
+
+def adjustTheta(theta):
+    ''' Adjust Phi 90 degrees counterclockwise '''
+    theta-=90
+    if (theta<0):
+        theta = 360+theta
+    return theta
