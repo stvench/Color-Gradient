@@ -6,6 +6,7 @@ import math
 from statistics import mean
 
 
+
 def read_clusMask(waveband, galNum, group):
     """
     Returns a dict containing {color:set of position pairs}

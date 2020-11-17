@@ -56,7 +56,7 @@ def structureInfo(galNum): # P_CS >=
         # https://math.stackexchange.com/questions/315386/ellipse-in-polar-coordinates
         ### A is horizontal x (diskMajAxsLen)
         ### B is vertical y   (diskMinAxsLen)
-        for a in range(1,int(diskMajAxsLen),1):
+        for a in range(1,int(diskMajAxsLen/2),1):
             b = a*diskAxisRatio
             ellipse = []
             for i in range(90,450):                                                  # Changing to (90,450) moves start THETA to intuitive point
@@ -72,6 +72,14 @@ def structureInfo(galNum): # P_CS >=
                 y = r*math.sin(radians) + 70
                 ellipse.append((round(x),round(y)))
 
+
+
+        filePath = f"C:/Users/sc123/Desktop/Galaxys/r/{galNum}/{galNum}-A_input.png"
+        a = cv2.imread(filePath)
+        for i,j in ellipse:
+            a[i,j]= (0,255,255)
+        plt.imshow(a)
+        plt.show()
 
 
 
