@@ -66,7 +66,7 @@ def arm_to_ArcsEllipse(majorAxis, minMaxRatio, axisRadians, armsPixels, center):
 
 
 
-def simThetas(middle, inner, outer):
+def remvSimThetas(middle, inner, outer):
     thetaList = []
     for theta, i , j in middle.arc:
         thetaList.append((theta,[(i,j)]))
@@ -97,6 +97,7 @@ def simThetas(middle, inner, outer):
 
 
 def calcElpsPoint(a, b, axisRadians, curTheta, center):
+    # https://math.stackexchange.com/questions/315386/ellipse-in-polar-coordinates
     radians = curTheta/180*math.pi
 
     bottomB = (b*math.cos(radians -axisRadians -math.pi/2))**2     # PI/2 must be here to correctly rotate
