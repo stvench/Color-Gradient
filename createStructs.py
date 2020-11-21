@@ -100,7 +100,7 @@ def calcElpsPoint(a, b, axisRadians, curTheta, center):
     # https://math.stackexchange.com/questions/315386/ellipse-in-polar-coordinates
     radians = curTheta/180*math.pi
 
-    bottomB = (b*math.cos(radians -axisRadians -math.pi/2))**2     # PI/2 must be here to correctly rotate
+    bottomB = (b*math.cos(radians -axisRadians -math.pi/2))**2     # PI/2 must be here to correctly rotate (BASICALLY DOING adjustTheta?)
     bottomA = (a*math.sin(radians -axisRadians -math.pi/2))**2     # diskMajAxAngleRadians rotates COUNTER-CLOCKWISE(both a>b & a<b)
     top = (a*b)
     bottom = math.sqrt(bottomB + bottomA)
