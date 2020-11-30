@@ -95,5 +95,5 @@ if __name__ == "__main__":
 
 
 
-    # galNum = "1237660635996291172"
-    # main("g", "r", galNum)
+    galNum = "1237660635996291172"
+    main("g", "r", galNum)

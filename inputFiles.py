@@ -8,7 +8,7 @@ from statistics import mean
 
 
 def read_arcsTSV(galNum):
-    filePath = f"C:/Users/sc123/Desktop/gal/5. NonCircular FITS/Previous Circle/TestsGalaxies/{galNum}/r/{galNum}.tsv"
+    filePath = f"C:/Users/sc123/Desktop/gal/5. NonCircular FITS/Previous Circle/Sample_Galaxies/{galNum}/r/{galNum}.tsv"
     with open(filePath, 'r') as data:
         foundHeaders = 0
         ##### FIND info
@@ -64,7 +64,7 @@ def read_clusMask(waveband, galNum, group):
         - position: (i,j) pixel locations
     """
     # Get Image of Galaxy Arms
-    filePath = f"C:/Users/sc123/Desktop/gal/5. NonCircular FITS/Previous Circle/TestsGalaxies/{galNum}/{waveband}/{galNum}-K_clusMask-reprojected.png"
+    filePath = f"C:/Users/sc123/Desktop/gal/5. NonCircular FITS/Previous Circle/Sample_Galaxies/{galNum}/{waveband}/{galNum}-K_clusMask-reprojected.png"
     imgClusMask = cv2.imread(filePath)
     dimensions = imgClusMask.shape
     rows = dimensions[0]
@@ -133,10 +133,10 @@ def read_clusMask(waveband, galNum, group):
 
 
 def unmergedFits(arcList,waveband1,waveband2,galNum):
-    hdul = fits.open(f"C:/Users/sc123/Desktop/gal/5. NonCircular FITS/Previous Circle/TestsGalaxies/{galNum}/{galNum}_{waveband1}.fits")
+    hdul = fits.open(f"C:/Users/sc123/Desktop/gal/5. NonCircular FITS/Previous Circle/Sample_Galaxies/{galNum}/{galNum}_{waveband1}.fits")
     image_data1 = hdul[0].data # 2-D Numpy Array
     hdul.close()
-    hdul = fits.open(f"C:/Users/sc123/Desktop/gal/5. NonCircular FITS/Previous Circle/TestsGalaxies/{galNum}/{galNum}_{waveband2}.fits")
+    hdul = fits.open(f"C:/Users/sc123/Desktop/gal/5. NonCircular FITS/Previous Circle/Sample_Galaxies/{galNum}/{galNum}_{waveband2}.fits")
     image_data2 = hdul[0].data # 2-D Numpy Array
     hdul.close()
     return [(phi,image_data1[i,j]-image_data2[i,j]) for phi,i,j in (arcList)]
@@ -144,10 +144,10 @@ def unmergedFits(arcList,waveband1,waveband2,galNum):
 
 
 def mergedFits(thetaList, waveband1,waveband2,galNum):
-    hdul = fits.open(f"C:/Users/sc123/Desktop/gal/5. NonCircular FITS/Previous Circle/TestsGalaxies/{galNum}/{galNum}_{waveband1}.fits")
+    hdul = fits.open(f"C:/Users/sc123/Desktop/gal/5. NonCircular FITS/Previous Circle/Sample_Galaxies/{galNum}/{galNum}_{waveband1}.fits")
     image_data1 = hdul[0].data # 2-D Numpy Array
     hdul.close()
-    hdul = fits.open(f"C:/Users/sc123/Desktop/gal/5. NonCircular FITS/Previous Circle/TestsGalaxies/{galNum}/{galNum}_{waveband2}.fits")
+    hdul = fits.open(f"C:/Users/sc123/Desktop/gal/5. NonCircular FITS/Previous Circle/Sample_Galaxies/{galNum}/{galNum}_{waveband2}.fits")
     image_data2 = hdul[0].data # 2-D Numpy Array
     hdul.close()
     return [(phi,mean([image_data1[i,j]-image_data2[i,j] for i,j in x])) for phi,x in (thetaList)]
