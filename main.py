@@ -85,10 +85,10 @@ def main(waveband1, waveband2, galNum):
             plt.suptitle("MajorAxis: {} | MinorAxis: {:.3f}".format(curEllipseInfo.majorAxisLen, curEllipseInfo.majorAxisLen*minMaxRatio), size=20)
             ### EITHER SAVEFIG OR SHOW for results, use SHOW() to test, SAVEFIG() to save as pdf
 
-            plt.savefig("200_600Gals/{}-_{}_{}-{}.pdf".format(galNum,curEllipseInfo.majorAxisLen,waveband1,waveband2))
+            plt.savefig("test/{}-_{}_{}-{}.pdf".format(galNum,curEllipseInfo.majorAxisLen,waveband1,waveband2))
             # plt.show()
             plt.close()
-            break
+            # break
 
 
 if __name__ == "__main__":
@@ -98,21 +98,25 @@ if __name__ == "__main__":
     # galNum = "1237660635996291172"
     # main("g", "r", galNum)
 
-    # galFile = open('spGal.txt','r')
-    # galaxy = galFile.readline()
-    # while galaxy:
-    #     print("-------------------------------------------")
-    #     print(galaxy)
-    #     try:
-    #         main(waveband1='g',waveband2='i',galNum=galaxy.rstrip("\n"))
-    #     except ThresholdError as err:
-    #         print("THRESHOLD ERROR")
-    #         print(err)
-    #     except:
-    #         print("NEED TO DEBUG THIS FAILURE")
-    #         # raise
-    #     galaxy = galFile.readline()
-    # galFile.close()
+#    count = 0
+    galFile = open('bigArmGals.txt','r')
+    galaxy = galFile.readline()
+    while galaxy:
+        print("-------------------------------------------")
+        print(galaxy)
+        try:
+            main(waveband1='g',waveband2='i',galNum=galaxy.rstrip("\n"))
+        except ThresholdError as err:
+            print("THRESHOLD ERROR")
+            print(err)
+        except:
+            print("NEED TO DEBUG THIS FAILURE")
+            # raise
+        galaxy = galFile.readline()
+#        if count == 500:
+#            break
+#        count += 1
+    galFile.close()
 
 
 
