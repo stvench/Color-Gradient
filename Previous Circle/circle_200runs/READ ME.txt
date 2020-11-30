@@ -2,6 +2,6 @@
 version of the code (11/2/20 & 11/7/20), which would create circles directly onto the (re-projected)? images
 
 - As such, the results were inaccurate, but keeping these for reference. The "good5full circle" are the 5
-best looking galaxies, although still not the best
+best looking galaxies, although still not the best (using "good5Gals")
 
 - The 200 galaxies are from the "200Gals.txt" (the first 200 from Williams getIt "nice galaxies" list)
