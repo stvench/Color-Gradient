@@ -131,6 +131,19 @@ def read_clusMask(waveband, galNum, group):
     return allPixelLoc, rows, cols # {color : {(i,j) , (i,j)} } , (i,j) }
 
 
+def readFits(waveband,galNum):
+    filePath = f"C:/Users/sc123/Desktop/gal/5. NonCircular FITS/1. Circle/Sample_Galaxies/{galNum}/{galNum}_{waveband}.fits"
+    hdul = fits.open(filePath)
+    fitsData = hdul[0].data # 2-D Numpy Array
+    hdul.close()
+    return fitsData
+
+
+
+
+
+
+
 
 def unmergedFits(arcList,waveband1,waveband2,galNum):
     filePath1 = f"C:/Users/sc123/Desktop/gal/5. NonCircular FITS/1. Circle/Sample_Galaxies/{galNum}/{galNum}_{waveband1}.fits"

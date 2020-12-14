@@ -14,54 +14,46 @@ def get_largestArm(galaxyArms):
     return largestArmPosition
 
 
-   
+
 def arm_to_ArcsEllipse(majorAxis, minMaxRatio, axisRadians, armsPixels, center):
     arcsEllipse_Positions = []
-
-    ####
-    # CHANGE a TO semimajoraxis len
-
-    for a in range(5, int(majorAxis/2)):                                            # Initial is 5 as any smaller just looks weird, probably not useful
-        arcsEllipse_Positions.append( ellipseInfo(a*2,[],set(),None,None) )
-        minTheta = None
-        maxTheta = None
+    overallMinTheta = None
+    overallMaxTheta = None
+    for semiMajLen in range(5, int(majorAxis/2)):                    # Initial is 5 as any smaller just looks weird, probably not useful
+        currentRadius = ellipseInfo(semiMajLen*2,[],set(),None,None)
         # Skip all small majorAxis's without little actual
         absoluteOverlapCount = 0 
         for curTheta in range(360):
-            i,j = calcElpsPoint(a, a*minMaxRatio, axisRadians, curTheta, center)
+            i,j = calcElpsPoint(semiMajLen, semiMajLen*minMaxRatio, axisRadians, curTheta, center)
             if ((i,j) in armsPixels):
                 absoluteOverlapCount += 1
         if (absoluteOverlapCount >= 5):
+
             # Obtain startingTheta (eliminates 360-0 overlap)
-            startingTheta=None
-            for curTheta in range(40,360,40):
-                emptyGap = True
-                for innerTheta in range(curTheta-40,curTheta+40):
-                    i,j = calcElpsPoint(a, a*minMaxRatio, axisRadians, innerTheta, center)
-                    if ((i,j) in armsPixels):
-                        emptyGap = False      
-                        break
-                if (emptyGap):
-                    startingTheta=curTheta
-                    break
+            startingTheta=calcStartingTheta(semiMajLen, minMaxRatio, axisRadians, center, armsPixels)
+
             # Obtain min/max angle of the arc overlap (relative to startingTheta)
             for curTheta in range(startingTheta,startingTheta+360):
-                i,j = calcElpsPoint(a, a*minMaxRatio, axisRadians, curTheta, center)
+                i,j = calcElpsPoint(semiMajLen, semiMajLen*minMaxRatio, axisRadians, curTheta, center)
                 if ((i,j) in armsPixels):
-                    if (minTheta is None):
-                        minTheta = curTheta
-                    maxTheta = curTheta      
-            arcsEllipse_Positions[-1].minTheta = adjustTheta(minTheta)
-            arcsEllipse_Positions[-1].maxTheta = adjustTheta(maxTheta)+360 if adjustTheta(maxTheta)<adjustTheta(minTheta) else adjustTheta(maxTheta)
+                    if (currentRadius.minTheta is None):
+                        currentRadius.minTheta = curTheta
+                    currentRadius.maxTheta = curTheta    
+            if (overallMinTheta is None) or (currentRadius.minTheta < overallMinTheta):
+                overallMinTheta = currentRadius.minTheta
+            if (overallMaxTheta is None) or (currentRadius.maxTheta > overallMaxTheta):
+                overallMaxTheta = currentRadius.maxTheta 
+            
             # Stores the points for ARC and ELLIPSE
             for curTheta in range(startingTheta,startingTheta+360):
-                i,j = calcElpsPoint(a, a*minMaxRatio, axisRadians, curTheta, center)
-                arcsEllipse_Positions[-1].ellipse.add((i,j))
+                i,j = calcElpsPoint(semiMajLen, semiMajLen*minMaxRatio, axisRadians, curTheta, center)
+                currentRadius.ellipse.add( (i,j) )
                 # If within the theta range for the ARC
-                if (curTheta >= minTheta) and (curTheta <= maxTheta):
-                    arcsEllipse_Positions[-1].arc.append((adjustTheta(curTheta),i,j))
+                if (curTheta >= currentRadius.minTheta) and (curTheta <= currentRadius.maxTheta):
+                    currentRadius.arc.append( (curTheta,i,j) )
+            arcsEllipse_Positions.append(currentRadius)
     # Return a list of ellipseInfo objects
-    return arcsEllipse_Positions
+    return arcsEllipse_Positions, overallMinTheta, overallMaxTheta
 
 
 
@@ -99,7 +91,7 @@ def calcElpsPoint(a, b, axisRadians, curTheta, center):
     # https://math.stackexchange.com/questions/315386/ellipse-in-polar-coordinates
     radians = curTheta/180*math.pi
 
-    bottomB = (b*math.cos(radians -axisRadians -math.pi/2))**2     # PI/2 must be here to correctly rotate (BASICALLY DOING adjustTheta?)
+    bottomB = (b*math.cos(radians -axisRadians -math.pi/2))**2     # PI/2 must be here to correctly rotate (BASICALLY DOING adjust Theta?)
     bottomA = (a*math.sin(radians -axisRadians -math.pi/2))**2     # diskMajAxAngleRadians rotates COUNTER-CLOCKWISE(both a>b & a<b)
     top = (a*b)
     bottom = math.sqrt(bottomB + bottomA)
@@ -111,6 +103,21 @@ def calcElpsPoint(a, b, axisRadians, curTheta, center):
 
 
 
+def calcStartingTheta(semiMajLen, minMaxRatio, axisRadians, center, armsPixels):
+    for curTheta in range(40,360,40):
+        emptyGap = True
+        for innerTheta in range(curTheta-40,curTheta+40):
+            i,j = calcElpsPoint(semiMajLen, semiMajLen*minMaxRatio, axisRadians, innerTheta, center)
+            if ((i,j) in armsPixels):
+                emptyGap = False      
+                break
+        if (emptyGap):
+            startingTheta=curTheta
+            break
+    return startingTheta
+
+
+
 class ellipseInfo:
     def __init__(self,majorAxisLen,arc,ellipse,minTheta,maxTheta):
         self.majorAxisLen   = majorAxisLen
@@ -119,10 +126,3 @@ class ellipseInfo:
         self.minTheta       = minTheta
         self.maxTheta       = maxTheta
 
-
-def adjustTheta(theta):
-    ''' Adjust Phi 90 degrees counterclockwise '''
-    theta-=90
-    if (theta<0):
-        theta = 360+theta
-    return theta
