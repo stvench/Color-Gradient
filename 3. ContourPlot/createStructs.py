@@ -19,7 +19,7 @@ def arm_to_ArcsEllipse(majorAxis, minMaxRatio, axisRadians, armsPixels, center):
     arcsEllipse_Positions = []
     overallMinTheta = None
     overallMaxTheta = None
-    for semiMajLen in range(5, int(majorAxis/2)):                    # Initial is 5 as any smaller just looks weird, probably not useful
+    for semiMajLen in range(5, int(majorAxis/2)):# Initial is 5 as any smaller just looks weird, probably not useful
         currentRadius = ellipseInfo(semiMajLen*2,[],set(),None,None)
         # Skip all small majorAxis's without little actual
         absoluteOverlapCount = 0 
@@ -58,6 +58,7 @@ def arm_to_ArcsEllipse(majorAxis, minMaxRatio, axisRadians, armsPixels, center):
 
 
 def remvSimThetas(middle, neighbors):
+    ### Change function name, doesnt remove similar thetas across neighbors, just groups thetas together
     thetaList = []
     for theta, i , j in middle.arc:
         thetaList.append((theta,[(i,j)]))
@@ -69,6 +70,7 @@ def remvSimThetas(middle, neighbors):
                 if (Itheta > theta):
                     break
     return thetaList
+
 
 
 def calcFlux(i,j,fits1,fits2):
