@@ -122,10 +122,11 @@ if __name__ == "__main__":
         except:
             print("NEED TO DEBUG THIS FAILURE")
             failedGalaxys.write(galaxy)
+            # raise 
         galaxy = galFile.readline()
-       if count == 200:
-           break
-       count += 1
+        if count == 200:
+            break
+        count += 1
     galFile.close()
     failedGalaxys.close()
 
