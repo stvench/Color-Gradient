@@ -8,7 +8,7 @@ import inputFiles
 import createStructs
 
 
-def main(waveband1, waveband2, galNum):
+def main(merge, waveband1, waveband2, galNum):
     minMaxRatio, minorAxis, majorAxis, axisRadians, inputCenterR, inputCenterC = inputFiles.read_arcsTSV(galNum)
     ############### 2.
     pixelLoc, rows, cols = inputFiles.read_clusMask(waveband=waveband1,galNum=galNum,group=True)
@@ -19,7 +19,7 @@ def main(waveband1, waveband2, galNum):
 
 
 
-    # Loop 1 (FIXES THE THETAS TO START AT 0 from FRONT)
+    # LOOP 1 (FIXES THE THETAS TO START AT 0 from FRONT)
     needSub360 = True if overallMaxTheta-overallMinTheta >= 360 else False
     newOverallMinTheta = None
     newOverallMaxTheta = None
@@ -46,8 +46,6 @@ def main(waveband1, waveband2, galNum):
 
     minMajAxLen = arcsEllipse_Positions[0].majorAxisLen
     maxMajAxLen = arcsEllipse_Positions[-1].majorAxisLen
-    print(0,newOverallMaxTheta-newOverallMinTheta+1)
-    print((minMajAxLen-2,maxMajAxLen+2))
     x = np.arange(0,newOverallMaxTheta-newOverallMinTheta+1)
     y = np.arange(minMajAxLen-2,maxMajAxLen+2)
     fig, ax = plt.subplots()
@@ -55,220 +53,226 @@ def main(waveband1, waveband2, galNum):
     
     a = inputFiles.readFits(waveband1,galNum)
     b = inputFiles.readFits(waveband2,galNum)
-    minFlux = None       # THIS IS THE OVERALL MIN/MAX FLUX ACROSS ALL radius
-    maxFlux = None
-    # Loop 2
-    for aepObj in arcsEllipse_Positions:
+    # LOOP 2
+    for i in range(merge,len(arcsEllipse_Positions)-merge):
+        current_aepObj = arcsEllipse_Positions[i]
+        # print(np.arange(i-merge,i+merge+1))
+
+        neighbor_aepObj = [arcsEllipse_Positions[j] for j in np.arange(i-merge,i+merge+1) if (i!=j)]
+        uniqueNeighborThetas = createStructs.remvSimThetas(middle=current_aepObj, neighbors=neighbor_aepObj)
+        # print(uniqueNeighborThetas)
+
         curRadiusMinFlux = None
         curRadiusMaxFLux = None
         # LOOP 1 (GETS THE RELATIVE MIN/MAX FOR THE CURRENT RADIUS)
-        for theta,i,j in aepObj.arc:
-            flux = 0
-            if i==0:
-                if j==0:
-                    flux += a[i,j] - b[i,j]
-                    flux += a[i,j+1] - b[i,j+1]
-
-                    flux += a[i+1,j] - b[i+1,j]
-                    flux += a[i+1,j+1] - b[i+1,j+1]
-                    avgFlux = flux/4
-                elif j==len(a)-1:
-                    flux += a[i,j] - b[i,j]
-                    flux += a[i,j-1] - b[i,j-1]
-
-                    flux += a[i+1,j] - b[i+1,j]
-                    flux += a[i+1,j-1] - b[i+1,j-1]
-                    avgFlux = flux/4
-                else:
-                    flux += a[i,j] - b[i,j]
-                    flux += a[i,j+1] - b[i,j+1]
-                    flux += a[i,j-1] - b[i,j-1]
-
-                    flux += a[i+1,j] - b[i+1,j]
-                    flux += a[i+1,j+1] - b[i+1,j+1]
-                    flux += a[i+1,j-1] - b[i+1,j-1]
-                    avgFlux = flux/6
-            elif i==len(a)-1:
-                if j==0:
-                    flux += a[i,j] - b[i,j]
-                    flux += a[i,j+1] - b[i,j+1]
-
-                    flux += a[i-1,j] - b[i-1,j]
-                    flux += a[i-1,j+1] - b[i-1,j+1]
-                    avgFlux = flux/4
-                elif j==len(a)-1:
-                    flux += a[i,j] - b[i,j]
-                    flux += a[i,j-1] - b[i,j-1]
-
-                    flux += a[i-1,j] - b[i-1,j]
-                    flux += a[i-1,j-1] - b[i-1,j-1]
-                    avgFlux = flux/4
-                else:
-                    flux += a[i,j] - b[i,j]
-                    flux += a[i,j+1] - b[i,j+1]
-                    flux += a[i,j-1] - b[i,j-1]
-
-                    flux += a[i-1,j] - b[i-1,j]
-                    flux += a[i-1,j+1] - b[i-1,j+1]
-                    flux += a[i-1,j-1] - b[i-1,j-1]
-                    avgFlux = flux/6
-            elif j==0:
+        for theta,pixelList in uniqueNeighborThetas:
+            for i,j in pixelList:
+                flux = 0
                 if i==0:
-                    # Already accounted for
-                    pass
+                    if j==0:
+                        flux += a[i,j] - b[i,j]
+                        flux += a[i,j+1] - b[i,j+1]
+
+                        flux += a[i+1,j] - b[i+1,j]
+                        flux += a[i+1,j+1] - b[i+1,j+1]
+                        avgFlux = flux/4
+                    elif j==len(a)-1:
+                        flux += a[i,j] - b[i,j]
+                        flux += a[i,j-1] - b[i,j-1]
+
+                        flux += a[i+1,j] - b[i+1,j]
+                        flux += a[i+1,j-1] - b[i+1,j-1]
+                        avgFlux = flux/4
+                    else:
+                        flux += a[i,j] - b[i,j]
+                        flux += a[i,j+1] - b[i,j+1]
+                        flux += a[i,j-1] - b[i,j-1]
+
+                        flux += a[i+1,j] - b[i+1,j]
+                        flux += a[i+1,j+1] - b[i+1,j+1]
+                        flux += a[i+1,j-1] - b[i+1,j-1]
+                        avgFlux = flux/6
                 elif i==len(a)-1:
-                    # Already accounted for
-                    pass
+                    if j==0:
+                        flux += a[i,j] - b[i,j]
+                        flux += a[i,j+1] - b[i,j+1]
+
+                        flux += a[i-1,j] - b[i-1,j]
+                        flux += a[i-1,j+1] - b[i-1,j+1]
+                        avgFlux = flux/4
+                    elif j==len(a)-1:
+                        flux += a[i,j] - b[i,j]
+                        flux += a[i,j-1] - b[i,j-1]
+
+                        flux += a[i-1,j] - b[i-1,j]
+                        flux += a[i-1,j-1] - b[i-1,j-1]
+                        avgFlux = flux/4
+                    else:
+                        flux += a[i,j] - b[i,j]
+                        flux += a[i,j+1] - b[i,j+1]
+                        flux += a[i,j-1] - b[i,j-1]
+
+                        flux += a[i-1,j] - b[i-1,j]
+                        flux += a[i-1,j+1] - b[i-1,j+1]
+                        flux += a[i-1,j-1] - b[i-1,j-1]
+                        avgFlux = flux/6
+                elif j==0:
+                    if i==0:
+                        # Already accounted for
+                        pass
+                    elif i==len(a)-1:
+                        # Already accounted for
+                        pass
+                    else:
+                        flux += a[i,j] - b[i,j]
+                        flux += a[i,j+1] - b[i,j+1]
+
+                        flux += a[i+1,j] - b[i+1,j]
+                        flux += a[i+1,j+1] - b[i+1,j+1]
+
+                        flux += a[i-1,j] - b[i-1,j]
+                        flux += a[i-1,j+1] - b[i-1,j+1]
+                        avgFlux = flux/6
+                elif j==len(a)-1:
+                    if i==0:
+                        # Already accounted for
+                        pass
+                    elif i==len(a)-1:
+                        # Already accounted for
+                        pass
+                    else:
+                        flux += a[i,j] - b[i,j]
+                        flux += a[i,j-1] - b[i,j-1]
+
+                        flux += a[i+1,j] - b[i+1,j]
+                        flux += a[i+1,j-1] - b[i+1,j-1]
+
+                        flux += a[i-1,j] - b[i-1,j]
+                        flux += a[i-1,j-1] - b[i-1,j-1]
+                        avgFlux = flux/6
                 else:
                     flux += a[i,j] - b[i,j]
                     flux += a[i,j+1] - b[i,j+1]
-
-                    flux += a[i+1,j] - b[i+1,j]
-                    flux += a[i+1,j+1] - b[i+1,j+1]
-
-                    flux += a[i-1,j] - b[i-1,j]
-                    flux += a[i-1,j+1] - b[i-1,j+1]
-                    avgFlux = flux/6
-            elif j==len(a)-1:
-                if i==0:
-                    # Already accounted for
-                    pass
-                elif i==len(a)-1:
-                    # Already accounted for
-                    pass
-                else:
-                    flux += a[i,j] - b[i,j]
                     flux += a[i,j-1] - b[i,j-1]
 
                     flux += a[i+1,j] - b[i+1,j]
+                    flux += a[i+1,j+1] - b[i+1,j+1]
                     flux += a[i+1,j-1] - b[i+1,j-1]
 
                     flux += a[i-1,j] - b[i-1,j]
+                    flux += a[i-1,j+1] - b[i-1,j+1]
                     flux += a[i-1,j-1] - b[i-1,j-1]
-                    avgFlux = flux/6
-            else:
-                flux += a[i,j] - b[i,j]
-                flux += a[i,j+1] - b[i,j+1]
-                flux += a[i,j-1] - b[i,j-1]
+                    avgFlux = flux/9
+                # CURRENT INNER RADIUS Min/Max checks
+                if (curRadiusMinFlux is None) or (avgFlux < curRadiusMinFlux):
+                    curRadiusMinFlux = avgFlux
+                if (curRadiusMaxFLux is None) or (avgFlux > curRadiusMaxFLux):
+                    curRadiusMaxFLux = avgFlux
+        majAxisIndex = int( (current_aepObj.majorAxisLen - minMajAxLen) + 2)
 
-                flux += a[i+1,j] - b[i+1,j]
-                flux += a[i+1,j+1] - b[i+1,j+1]
-                flux += a[i+1,j-1] - b[i+1,j-1]
-
-                flux += a[i-1,j] - b[i-1,j]
-                flux += a[i-1,j+1] - b[i-1,j+1]
-                flux += a[i-1,j-1] - b[i-1,j-1]
-                avgFlux = flux/9
-            # OVERALL Min/Max checks
-            if (minFlux is None) or (avgFlux < minFlux):
-                minFlux = avgFlux
-            if (maxFlux is None) or (avgFlux > maxFlux):
-                maxFlux = avgFlux
-            # CURRENT INNER RADIUS Min/Max checks
-            if (curRadiusMinFlux is None) or (avgFlux < curRadiusMinFlux):
-                curRadiusMinFlux = avgFlux
-            if (curRadiusMaxFLux is None) or (avgFlux > curRadiusMaxFLux):
-                curRadiusMaxFLux = avgFlux
-        majAxisIndex = int( (aepObj.majorAxisLen - minMajAxLen) + 2)
         # LOOP 2 (USES THE PREV LOOPS RESULTS OF MIN/MAX TO SCALE THE VALUES)
-        for theta,i,j in aepObj.arc:
-            flux = 0
-            if i==0:
-                if j==0:
-                    flux += a[i,j] - b[i,j]
-                    flux += a[i,j+1] - b[i,j+1]
-
-                    flux += a[i+1,j] - b[i+1,j]
-                    flux += a[i+1,j+1] - b[i+1,j+1]
-                    avgFlux = flux/4
-                elif j==len(a)-1:
-                    flux += a[i,j] - b[i,j]
-                    flux += a[i,j-1] - b[i,j-1]
-
-                    flux += a[i+1,j] - b[i+1,j]
-                    flux += a[i+1,j-1] - b[i+1,j-1]
-                    avgFlux = flux/4
-                else:
-                    flux += a[i,j] - b[i,j]
-                    flux += a[i,j+1] - b[i,j+1]
-                    flux += a[i,j-1] - b[i,j-1]
-
-                    flux += a[i+1,j] - b[i+1,j]
-                    flux += a[i+1,j+1] - b[i+1,j+1]
-                    flux += a[i+1,j-1] - b[i+1,j-1]
-                    avgFlux = flux/6
-            elif i==len(a)-1:
-                if j==0:
-                    flux += a[i,j] - b[i,j]
-                    flux += a[i,j+1] - b[i,j+1]
-
-                    flux += a[i-1,j] - b[i-1,j]
-                    flux += a[i-1,j+1] - b[i-1,j+1]
-                    avgFlux = flux/4
-                elif j==len(a)-1:
-                    flux += a[i,j] - b[i,j]
-                    flux += a[i,j-1] - b[i,j-1]
-
-                    flux += a[i-1,j] - b[i-1,j]
-                    flux += a[i-1,j-1] - b[i-1,j-1]
-                    avgFlux = flux/4
-                else:
-                    flux += a[i,j] - b[i,j]
-                    flux += a[i,j+1] - b[i,j+1]
-                    flux += a[i,j-1] - b[i,j-1]
-
-                    flux += a[i-1,j] - b[i-1,j]
-                    flux += a[i-1,j+1] - b[i-1,j+1]
-                    flux += a[i-1,j-1] - b[i-1,j-1]
-                    avgFlux = flux/6
-            elif j==0:
+        for theta,pixelList in uniqueNeighborThetas:
+            totalAvgFlux = 0
+            for i,j in pixelList:
+                flux = 0
                 if i==0:
-                    # Already accounted for
-                    pass
+                    if j==0:
+                        flux += a[i,j] - b[i,j]
+                        flux += a[i,j+1] - b[i,j+1]
+
+                        flux += a[i+1,j] - b[i+1,j]
+                        flux += a[i+1,j+1] - b[i+1,j+1]
+                        avgFlux = flux/4
+                    elif j==len(a)-1:
+                        flux += a[i,j] - b[i,j]
+                        flux += a[i,j-1] - b[i,j-1]
+
+                        flux += a[i+1,j] - b[i+1,j]
+                        flux += a[i+1,j-1] - b[i+1,j-1]
+                        avgFlux = flux/4
+                    else:
+                        flux += a[i,j] - b[i,j]
+                        flux += a[i,j+1] - b[i,j+1]
+                        flux += a[i,j-1] - b[i,j-1]
+
+                        flux += a[i+1,j] - b[i+1,j]
+                        flux += a[i+1,j+1] - b[i+1,j+1]
+                        flux += a[i+1,j-1] - b[i+1,j-1]
+                        avgFlux = flux/6
                 elif i==len(a)-1:
-                    # Already accounted for
-                    pass
+                    if j==0:
+                        flux += a[i,j] - b[i,j]
+                        flux += a[i,j+1] - b[i,j+1]
+
+                        flux += a[i-1,j] - b[i-1,j]
+                        flux += a[i-1,j+1] - b[i-1,j+1]
+                        avgFlux = flux/4
+                    elif j==len(a)-1:
+                        flux += a[i,j] - b[i,j]
+                        flux += a[i,j-1] - b[i,j-1]
+
+                        flux += a[i-1,j] - b[i-1,j]
+                        flux += a[i-1,j-1] - b[i-1,j-1]
+                        avgFlux = flux/4
+                    else:
+                        flux += a[i,j] - b[i,j]
+                        flux += a[i,j+1] - b[i,j+1]
+                        flux += a[i,j-1] - b[i,j-1]
+
+                        flux += a[i-1,j] - b[i-1,j]
+                        flux += a[i-1,j+1] - b[i-1,j+1]
+                        flux += a[i-1,j-1] - b[i-1,j-1]
+                        avgFlux = flux/6
+                elif j==0:
+                    if i==0:
+                        # Already accounted for
+                        pass
+                    elif i==len(a)-1:
+                        # Already accounted for
+                        pass
+                    else:
+                        flux += a[i,j] - b[i,j]
+                        flux += a[i,j+1] - b[i,j+1]
+
+                        flux += a[i+1,j] - b[i+1,j]
+                        flux += a[i+1,j+1] - b[i+1,j+1]
+
+                        flux += a[i-1,j] - b[i-1,j]
+                        flux += a[i-1,j+1] - b[i-1,j+1]
+                        avgFlux = flux/6
+                elif j==len(a)-1:
+                    if i==0:
+                        # Already accounted for
+                        pass
+                    elif i==len(a)-1:
+                        # Already accounted for
+                        pass
+                    else:
+                        flux += a[i,j] - b[i,j]
+                        flux += a[i,j-1] - b[i,j-1]
+
+                        flux += a[i+1,j] - b[i+1,j]
+                        flux += a[i+1,j-1] - b[i+1,j-1]
+
+                        flux += a[i-1,j] - b[i-1,j]
+                        flux += a[i-1,j-1] - b[i-1,j-1]
+                        avgFlux = flux/6
                 else:
                     flux += a[i,j] - b[i,j]
                     flux += a[i,j+1] - b[i,j+1]
-
-                    flux += a[i+1,j] - b[i+1,j]
-                    flux += a[i+1,j+1] - b[i+1,j+1]
-
-                    flux += a[i-1,j] - b[i-1,j]
-                    flux += a[i-1,j+1] - b[i-1,j+1]
-                    avgFlux = flux/6
-            elif j==len(a)-1:
-                if i==0:
-                    # Already accounted for
-                    pass
-                elif i==len(a)-1:
-                    # Already accounted for
-                    pass
-                else:
-                    flux += a[i,j] - b[i,j]
                     flux += a[i,j-1] - b[i,j-1]
 
                     flux += a[i+1,j] - b[i+1,j]
+                    flux += a[i+1,j+1] - b[i+1,j+1]
                     flux += a[i+1,j-1] - b[i+1,j-1]
 
                     flux += a[i-1,j] - b[i-1,j]
+                    flux += a[i-1,j+1] - b[i-1,j+1]
                     flux += a[i-1,j-1] - b[i-1,j-1]
-                    avgFlux = flux/6
-            else:
-                flux += a[i,j] - b[i,j]
-                flux += a[i,j+1] - b[i,j+1]
-                flux += a[i,j-1] - b[i,j-1]
-
-                flux += a[i+1,j] - b[i+1,j]
-                flux += a[i+1,j+1] - b[i+1,j+1]
-                flux += a[i+1,j-1] - b[i+1,j-1]
-
-                flux += a[i-1,j] - b[i-1,j]
-                flux += a[i-1,j+1] - b[i-1,j+1]
-                flux += a[i-1,j-1] - b[i-1,j-1]
-                avgFlux = flux/9
-
+                    avgFlux = flux/9
+                totalAvgFlux += avgFlux
+            totalAvgFlux = totalAvgFlux/len(pixelList)
+            
             if sWise:
                 thetaIndex = newOverallMaxTheta - theta
             else:
@@ -278,8 +282,6 @@ def main(waveband1, waveband2, galNum):
             if relScale == 1:            # If its equal to the max, tone down a little so can still see it
                 relScale -= 0.01
             FINALPLOT[majAxisIndex,thetaIndex] = relScale
-
-
 
 
     ax.imshow(FINALPLOT, origin="lower", extent = [0, newOverallMaxTheta-newOverallMinTheta+1, minMajAxLen-2,maxMajAxLen+2])
@@ -292,7 +294,7 @@ def main(waveband1, waveband2, galNum):
 if __name__ == "__main__":
 
 
-    main(waveband1='g',waveband2='i',galNum="1237660635996291172")
+    main(merge=1, waveband1='g',waveband2='i',galNum="1237660635996291172")
 
     # main(waveband1='g',waveband2='i',galNum="1237648705658486867")
     

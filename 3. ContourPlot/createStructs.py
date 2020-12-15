@@ -57,33 +57,18 @@ def arm_to_ArcsEllipse(majorAxis, minMaxRatio, axisRadians, armsPixels, center):
 
 
 
-def remvSimThetas(middle, inner, outer):
+def remvSimThetas(middle, neighbors):
     thetaList = []
     for theta, i , j in middle.arc:
         thetaList.append((theta,[(i,j)]))
-        for Itheta,Ii,Ij in inner.arc:
-            if (theta == Itheta):
-                thetaList[-1][1].append((Ii,Ij))
-                break
-        for Otheta,Oi,Oj in outer.arc:
-            if (theta == Otheta):
-                thetaList[-1][1].append((Oi,Oj))
-                break
-    ### REMOVES MOST DUPLICATE PHIs (ones that point to the same i,j position)
-    uniqueThetaList = []
-    prev = None
-    same = []
-    for ele in thetaList:
-        if ele[1] == prev:
-            same.append(ele)
-        else:
-            if len(same)>0:
-                uniqueThetaList.append(same[int(len(same)/2)])
-            same = [ele]
-            prev = ele[1]
-    if len(same)>0:
-        uniqueThetaList.append(same[int(len(same)/2)])
-    return uniqueThetaList
+        for aep_Obj in neighbors:
+            for Itheta, Ii, Ij in aep_Obj.arc:
+                if (theta == Itheta):
+                    thetaList[-1][1].append((Ii,Ij))
+                    break
+                if (Itheta > theta):
+                    break
+    return thetaList
 
 
 
