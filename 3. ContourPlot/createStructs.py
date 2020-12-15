@@ -71,6 +71,107 @@ def remvSimThetas(middle, neighbors):
     return thetaList
 
 
+def calcFlux(i,j,fits1,fits2):
+    # Given an (i,j) position, returns the average of all 8 values surronding it, unless on border
+    flux = 0
+    if i==0:
+        if j==0:
+            flux += fits1[i,j]      - fits2[i,j]
+            flux += fits1[i,j+1]    - fits2[i,j+1]
+
+            flux += fits1[i+1,j]    - fits2[i+1,j]
+            flux += fits1[i+1,j+1]  - fits2[i+1,j+1]
+            avgFlux = flux/4
+        elif j==len(fits1)-1:
+            flux += fits1[i,j]      - fits2[i,j]
+            flux += fits1[i,j-1]    - fits2[i,j-1]
+
+            flux += fits1[i+1,j]    - fits2[i+1,j]
+            flux += fits1[i+1,j-1]  - fits2[i+1,j-1]
+            avgFlux = flux/4
+        else:
+            flux += fits1[i,j]      - fits2[i,j]
+            flux += afits1[i,j+1]   - fits2[i,j+1]
+            flux += fits1[i,j-1]    - fits2[i,j-1]
+
+            flux += fits1[i+1,j]    - fits2[i+1,j]
+            flux += fits1[i+1,j+1]  - fits2[i+1,j+1]
+            flux += fits1[i+1,j-1]  - fits2[i+1,j-1]
+            avgFlux = flux/6
+    elif i==len(fits1)-1:
+        if j==0:
+            flux += fits1[i,j]      - fits2[i,j]
+            flux += fits1[i,j+1]    - fits2[i,j+1]
+
+            flux += fits1[i-1,j]    - fits2[i-1,j]
+            flux += fits1[i-1,j+1]  - fits2[i-1,j+1]
+            avgFlux = flux/4
+        elif j==len(fits1)-1:
+            flux += fits1[i,j]      - fits2[i,j]
+            flux += fits1[i,j-1]    - fits2[i,j-1]
+
+            flux += fits1[i-1,j]    - fits2[i-1,j]
+            flux += fits1[i-1,j-1]  - fits2[i-1,j-1]
+            avgFlux = flux/4
+        else:
+            flux += fits1[i,j]      - fits2[i,j]
+            flux += fits1[i,j+1]    - fits2[i,j+1]
+            flux += fits1[i,j-1]    - fits2[i,j-1]
+
+            flux += fits1[i-1,j]    - fits2[i-1,j]
+            flux += fits1[i-1,j+1]  - fits2[i-1,j+1]
+            flux += fits1[i-1,j-1]  - fits2[i-1,j-1]
+            avgFlux = flux/6
+    elif j==0:
+        if i==0:
+            # Already accounted for
+            pass
+        elif i==len(fits1)-1:
+            # Already accounted for
+            pass
+        else:
+            flux += a[i,j]          - fits2[i,j]
+            flux += a[i,j+1]        - fits2[i,j+1]
+
+            flux += a[i+1,j]        - fits2[i+1,j]
+            flux += a[i+1,j+1]      - fits2[i+1,j+1]
+
+            flux += a[i-1,j]        - fits2[i-1,j]
+            flux += a[i-1,j+1]      - fits2[i-1,j+1]
+            avgFlux = flux/6
+    elif j==len(fits1)-1:
+        if i==0:
+            # Already accounted for
+            pass
+        elif i==len(fits1)-1:
+            # Already accounted for
+            pass
+        else:
+            flux += fits1[i,j]      - fits2[i,j]
+            flux += fits1[i,j-1]    - fits2[i,j-1]
+
+            flux += fits1[i+1,j]    - fits2[i+1,j]
+            flux += fits1[i+1,j-1]  - fits2[i+1,j-1]
+
+            flux += fits1[i-1,j]    - fits2[i-1,j]
+            flux += fits1[i-1,j-1]  - fits2[i-1,j-1]
+            avgFlux = flux/6
+    else:
+        flux += fits1[i,j]          - fits2[i,j]
+        flux += fits1[i,j+1]        - fits2[i,j+1]
+        flux += fits1[i,j-1]        - fits2[i,j-1]
+
+        flux += fits1[i+1,j]        - fits2[i+1,j]
+        flux += fits1[i+1,j+1]      - fits2[i+1,j+1]
+        flux += fits1[i+1,j-1]      - fits2[i+1,j-1]
+
+        flux += fits1[i-1,j]        - fits2[i-1,j]
+        flux += fits1[i-1,j+1]      - fits2[i-1,j+1]
+        flux += fits1[i-1,j-1]      - fits2[i-1,j-1]
+        avgFlux = flux/9
+    return avgFlux
+
+
 
 def calcElpsPoint(a, b, axisRadians, curTheta, center):
     # https://math.stackexchange.com/questions/315386/ellipse-in-polar-coordinates
