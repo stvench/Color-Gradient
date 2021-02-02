@@ -5,10 +5,11 @@ from statistics import mean
 
 
 
-def read_arcsTSV(galNum):
-    # FILEPATH = f"C:/Users/sc123/Desktop/gal/5. NonCircular FITS/1. Circle/Sample_Galaxies/{galNum}/r/{galNum}.tsv"
-    FILEPATH = f"/extra/wayne1/research/drdavis/SDSS/SpArcFiRe/2016-09/r/{galNum[-3:]}/{galNum}/{galNum}.tsv"
-
+def read_arcsTSV(galNum, onOpenlabs):
+    if (onOpenlabs):
+        FILEPATH = f"/extra/wayne1/research/drdavis/SDSS/SpArcFiRe/2016-09/r/{galNum[-3:]}/{galNum}/{galNum}.tsv"
+    else:
+        FILEPATH = f"C:/Users/sc123/Desktop/gal/5. NonCircular FITS/1. Circle/Sample_Galaxies/{galNum}/r/{galNum}.tsv"
 
     with open(FILEPATH, 'r') as data:
         foundHeaders = 0
@@ -58,16 +59,16 @@ def read_arcsTSV(galNum):
 
 
 
-def read_clusMask(waveband, galNum, group):
+def read_clusMask(waveband, galNum, group, onOpenlabs):
     """
     Returns a dict containing {color:set of position pairs}
         - color:    color
         - position: (i,j) pixel locations
     """
-    # FILEPATH OF SpArcFiRe K_clusMask output pngs
-    # FILEPATH = f"C:/Users/sc123/Desktop/gal/5. NonCircular FITS/1. Circle/Sample_Galaxies/{galNum}/{waveband}/{galNum}-K_clusMask-reprojected.png"
-    FILEPATH = f"/extra/wayne1/research/drdavis/SDSS/SpArcFiRe/2016-09/{waveband}/{galNum[-3:]}/{galNum}/{galNum}-K_clusMask-reprojected.png"
-
+    if (onOpenlabs):
+        FILEPATH = f"/extra/wayne1/research/drdavis/SDSS/SpArcFiRe/2016-09/{waveband}/{galNum[-3:]}/{galNum}/{galNum}-K_clusMask-reprojected.png"
+    else:
+        FILEPATH = f"C:/Users/sc123/Desktop/gal/5. NonCircular FITS/1. Circle/Sample_Galaxies/{galNum}/{waveband}/{galNum}-K_clusMask-reprojected.png"
 
     imgClusMask = cv2.imread(FILEPATH)
     dimensions = imgClusMask.shape
@@ -135,10 +136,12 @@ def read_clusMask(waveband, galNum, group):
     return allPixelLoc, rows, cols # {color : {(i,j) , (i,j)} } , (i,j) }
 
 
-def readFits(waveband,galNum):
-    # FILEPATH = f"C:/Users/sc123/Desktop/gal/5. NonCircular FITS/1. Circle/Sample_Galaxies/{galNum}/{galNum}_{waveband}.fits"
-    FILEPATH = f"/extra/wayne1/research/drdavis/SDSS/FITS/color/{waveband}/{galNum[-3:]}/{galNum}.fits.gz"
-
+def readFits(waveband,galNum,onOpenlabs):
+    FILEPATH = f"C:/Users/sc123/Desktop/gal/5. NonCircular FITS/1. Circle/Sample_Galaxies/{galNum}/{galNum}_{waveband}.fits"
+    if (onOpenlabs):
+        FILEPATH = f"/extra/wayne1/research/drdavis/SDSS/FITS/color/{waveband}/{galNum[-3:]}/{galNum}.fits.gz"
+    else:
+        FILEPATH = f"C:/Users/sc123/Desktop/gal/5. NonCircular FITS/1. Circle/Sample_Galaxies/{galNum}/{galNum}_{waveband}.fits"
 
     hdul = fits.open(FILEPATH)
     fitsData = hdul[0].data # 2-D Numpy Array

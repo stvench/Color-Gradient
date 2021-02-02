@@ -3,7 +3,7 @@ import math
 
 
 def get_largestArm(galaxyArms):
-    """Returns the largest arm in galaxy
+    """Returns SET of the largest arm in galaxy
             -most pixels, not length"""
     largestArmPosition = set()
     largestArmSize = 0
@@ -12,6 +12,26 @@ def get_largestArm(galaxyArms):
             largestArmSize = len(positions)
             largestArmPosition = positions
     return largestArmPosition
+
+
+
+def unionClosestArm(waveband1LargestArm, waveband2AllArms):
+    """ Returns the arm from waveband2AllArms that has
+    the highest overall overlap with waveband1s largest arm.
+        Overlap here is looking at the size of the intersection of the 
+        2 arms over the total size of waveband1's arm
+        (waveband1 && waveband2) / (waveband1)
+
+        rtype: set()
+    """
+    overlapAmt = 0
+    closestArm = None
+    for armPos in waveband2AllArms.values():
+        curOverlap = len(waveband1LargestArm.intersection(armPos)) / len(waveband1LargestArm)
+        if (curOverlap>=overlapAmt):
+            overlapAmt = curOverlap
+            closestArm = armPos
+    return waveband1LargestArm.union(closestArm) 
 
 
 
