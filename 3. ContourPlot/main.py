@@ -93,13 +93,18 @@ def main(merge, waveband1, waveband2, galNum, onOpenlabs):
     ax[0].set_aspect(2)
     ax[0].set_xlabel("θ from front", size=13)
     ax[0].set_ylabel(f"Major Axis Length ({minMajAxLen}-{maxMajAxLen})", size=13)
-    ### PLOT 2 (arm for reference) and the "front" of arm as a perpendicular line
+    ### PLOT 2
     armReference = np.zeros((rows,cols))
+    # Plot the arm
     for i,j in armsPixels:
         armReference[i,j] = 1
     frontStartTheta = newOverallMaxTheta if sWise else newOverallMinTheta
+    # Plot the "front" of the arm as a line
     for majaxLen in range(1,int(maxMajAxLen/2)):
         i,j = createStructs.calcElpsPoint(majaxLen, majaxLen*minMaxRatio, axisRadians, frontStartTheta, (inputCenterR, inputCenterR))
+        armReference[i,j] = 0.5
+    # Plot the overall shape of galaxy for ellipse reference
+    for i,j in arcsEllipse_Positions[-1].ellipse:
         armReference[i,j] = 0.5
     ax[1].imshow(armReference)
     plt.suptitle(f"{galNum}_({waveband1}-{waveband2})_merge({merge})", size=17)
@@ -109,29 +114,35 @@ def main(merge, waveband1, waveband2, galNum, onOpenlabs):
 
 
 if __name__ == "__main__":
-    onOpenlabs = False
+    onOpenlabs = True
 
-    # count = 0
-    # galFile = open('getItSp.txt','r')
-    # failedGalaxys = open("DEBUGLATER.txt","w")
-    # galaxy = galFile.readline()
-    # while galaxy:
-    #     print("-------------------------------------------")
-    #     print(galaxy)
-    #     try:
-    #         main(merge=0, waveband1='g',waveband2='i',galNum=galaxy.rstrip("\n"),onOpenlabs=onOpenlabs)
-    #     except:
-    #         print("NEED TO DEBUG THIS FAILURE")
-    #         failedGalaxys.write(galaxy)
-    #         # raise 
-    #     galaxy = galFile.readline()
-    #     if count == 200:
-    #         break
-    #     count += 1
-    # galFile.close()
-    # failedGalaxys.close()
 
-    main(merge=0, waveband1='g',waveband2='i',galNum="1237660635996291172",onOpenlabs=onOpenlabs)
+    ### Openlabs runs
+    count = 0
+    errCount = 0
+    galFile = open('getItSp.txt','r')           # Each line is a galaxy to test
+    failedGalaxys = open("DEBUGLATER.txt","w")  # Each line is a galaxy that failed
+    galaxy = galFile.readline()
+    while galaxy:
+        print("-------------------------------------------")
+        print(galaxy)
+        try:
+            main(merge=1, waveband1='g', waveband2='i', galNum=galaxy.rstrip("\n"), onOpenlabs=onOpenlabs)
+        except:
+            failedGalaxys.write(galaxy)
+            errCount += 1
+            # raise 
+        galaxy = galFile.readline()
+        if count == 200:
+            break
+        count += 1
+    galFile.close()
+    failedGalaxys.close()
+    print(f"{count-errCount}/{count} ({(count-errCount)/count*100:.2f}%) succeeded")
+
+
+    ### Local runs
+    # main(merge=0, waveband1='g',waveband2='i',galNum="1237660635996291172",onOpenlabs=onOpenlabs)
     # main(merge=1, waveband1='g',waveband2='i',galNum="1237660635996291172",onOpenlabs=onOpenlabs)
     # main(merge=2, waveband1='g',waveband2='i',galNum="1237660635996291172",onOpenlabs=onOpenlabs)
 

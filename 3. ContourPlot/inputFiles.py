@@ -137,7 +137,6 @@ def read_clusMask(waveband, galNum, group, onOpenlabs):
 
 
 def readFits(waveband,galNum,onOpenlabs):
-    FILEPATH = f"C:/Users/sc123/Desktop/gal/5. NonCircular FITS/1. Circle/Sample_Galaxies/{galNum}/{galNum}_{waveband}.fits"
     if (onOpenlabs):
         FILEPATH = f"/extra/wayne1/research/drdavis/SDSS/FITS/color/{waveband}/{galNum[-3:]}/{galNum}.fits.gz"
     else:
