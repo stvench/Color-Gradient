@@ -45,11 +45,10 @@ def main(merge, waveband1, waveband2, galNum, onOpenlabs):
     armsEndTheta   = arcsEllipse_Positions[-1].arc[-1][0]
     sWise = True if armsFrontTheta>armsEndTheta else False
 
-    ####################### Figure out and write out reasoning for the +1, +2, -2 (They are definitely needed though) ###############################################################################################################################
     minSemiMajAxLen = int(arcsEllipse_Positions[0].majorAxisLen/2)
     maxSemiMajAxLen = int(arcsEllipse_Positions[-1].majorAxisLen/2)
-    x = np.arange(0,newOverallMaxTheta-newOverallMinTheta+1)
-    y = np.arange(minSemiMajAxLen-1,maxSemiMajAxLen+1)
+    x = np.arange(0,newOverallMaxTheta-newOverallMinTheta+1)    # +1 needed as not inclusive range
+    y = np.arange(minSemiMajAxLen,maxSemiMajAxLen+1)            # +1 needed as not inclusive range
     FINALPLOT = np.ones((len(y),len(x),3), dtype=float) # array of [1.0,1.0,1.0] (float needed as plt.imshow() for RBGs floats bounded by [0...1], with 1 as WHITE)
     fits1 = inputFiles.readFits(waveband1,galNum,onOpenlabs)
     fits2 = inputFiles.readFits(waveband2,galNum,onOpenlabs)
@@ -71,7 +70,7 @@ def main(merge, waveband1, waveband2, galNum, onOpenlabs):
                     curRadiusMaxFLux = avgFlux
         
         # LOOP 2 (USES THE PREV LOOPS RESULTS OF MIN/MAX TO SCALE THE VALUES)
-        semiMajAxisIndex = int(current_aepObj.majorAxisLen/2) - minSemiMajAxLen + 1
+        semiMajAxisIndex = int(current_aepObj.majorAxisLen/2) - minSemiMajAxLen
         for theta,pixelList in uniqueNeighborThetas:
             totalAvgFlux = 0
             for i,j in pixelList:
@@ -87,7 +86,7 @@ def main(merge, waveband1, waveband2, galNum, onOpenlabs):
     # PLOTTING ###############################################################################################################################
     fig,ax = plt.subplots(1,2,gridspec_kw={'width_ratios': [3, 1]})
     ### PLOT 1 (actual color difference)
-    ax[0].imshow(FINALPLOT, origin="lower", extent = [0, newOverallMaxTheta-newOverallMinTheta+1, minSemiMajAxLen-1,maxSemiMajAxLen+1])
+    ax[0].imshow(FINALPLOT, origin="lower", extent = [0, newOverallMaxTheta-newOverallMinTheta+1, minSemiMajAxLen,maxSemiMajAxLen+1])
     ax[0].set_aspect(2)
     ax[0].set_xlabel("θ from front", size=13)
     ax[0].set_ylabel(f"Major Axis Length ({minSemiMajAxLen}-{maxSemiMajAxLen})", size=13)
