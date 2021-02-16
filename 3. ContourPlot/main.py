@@ -46,10 +46,10 @@ def main(merge, waveband1, waveband2, galNum, onOpenlabs):
     sWise = True if armsFrontTheta>armsEndTheta else False
 
     ####################### Figure out and write out reasoning for the +1, +2, -2 (They are definitely needed though) ###############################################################################################################################
-    minMajAxLen = arcsEllipse_Positions[0].majorAxisLen
-    maxMajAxLen = arcsEllipse_Positions[-1].majorAxisLen
+    minSemiMajAxLen = int(arcsEllipse_Positions[0].majorAxisLen/2)
+    maxSemiMajAxLen = int(arcsEllipse_Positions[-1].majorAxisLen/2)
     x = np.arange(0,newOverallMaxTheta-newOverallMinTheta+1)
-    y = np.arange(minMajAxLen-2,maxMajAxLen+2)
+    y = np.arange(minSemiMajAxLen-1,maxSemiMajAxLen+1)
     FINALPLOT = np.ones((len(y),len(x),3), dtype=float) # array of [1.0,1.0,1.0] (float needed as plt.imshow() for RBGs floats bounded by [0...1], with 1 as WHITE)
     fits1 = inputFiles.readFits(waveband1,galNum,onOpenlabs)
     fits2 = inputFiles.readFits(waveband2,galNum,onOpenlabs)
@@ -59,8 +59,7 @@ def main(merge, waveband1, waveband2, galNum, onOpenlabs):
         neighbor_aepObjs = [arcsEllipse_Positions[j] for j in np.arange(i-merge,i+merge+1) if (i!=j)]
         uniqueNeighborThetas = createStructs.remvSimThetas(middle=current_aepObj, neighbors=neighbor_aepObjs)
 
-
-        # LOOP 1 (GETS THE RELATIVE MIN/MAX FOR THE CURRENT RADIUS)   ################# DO THIS DIRECTLY IN remvSIMTHETAS, ONE LESS LOOP
+        # LOOP 1 (GETS THE RELATIVE MIN/MAX FOR THE CURRENT RADIUS)   ################# DO THIS DIRECTLY IN remvSIMTHETAS, ONE LESS LOOP?
         curRadiusMinFlux = None
         curRadiusMaxFLux = None
         for theta,pixelList in uniqueNeighborThetas:
@@ -71,9 +70,8 @@ def main(merge, waveband1, waveband2, galNum, onOpenlabs):
                 if (curRadiusMaxFLux is None) or (avgFlux > curRadiusMaxFLux):
                     curRadiusMaxFLux = avgFlux
         
-        
         # LOOP 2 (USES THE PREV LOOPS RESULTS OF MIN/MAX TO SCALE THE VALUES)
-        majAxisIndex = int( (current_aepObj.majorAxisLen - minMajAxLen) + 2)
+        semiMajAxisIndex = int(current_aepObj.majorAxisLen/2) - minSemiMajAxLen + 1
         for theta,pixelList in uniqueNeighborThetas:
             totalAvgFlux = 0
             for i,j in pixelList:
@@ -84,15 +82,15 @@ def main(merge, waveband1, waveband2, galNum, onOpenlabs):
             relScale = abs(avgFlux-curRadiusMinFlux) / abs(curRadiusMaxFLux-curRadiusMinFlux)
             if relScale == 1:            # If its equal to the max, tone down a little so can still see it
                 relScale -= 0.01
-            FINALPLOT[majAxisIndex,thetaIndex] = relScale # Automatically creates a [reScale, relScale, relScale]
+            FINALPLOT[semiMajAxisIndex,thetaIndex] = relScale # Automatically converts relScale -> [relScale, relScale, relScale]
 
     # PLOTTING ###############################################################################################################################
     fig,ax = plt.subplots(1,2,gridspec_kw={'width_ratios': [3, 1]})
     ### PLOT 1 (actual color difference)
-    ax[0].imshow(FINALPLOT, origin="lower", extent = [0, newOverallMaxTheta-newOverallMinTheta+1, minMajAxLen-2,maxMajAxLen+2])
+    ax[0].imshow(FINALPLOT, origin="lower", extent = [0, newOverallMaxTheta-newOverallMinTheta+1, minSemiMajAxLen-1,maxSemiMajAxLen+1])
     ax[0].set_aspect(2)
     ax[0].set_xlabel("θ from front", size=13)
-    ax[0].set_ylabel(f"Major Axis Length ({minMajAxLen}-{maxMajAxLen})", size=13)
+    ax[0].set_ylabel(f"Major Axis Length ({minSemiMajAxLen}-{maxSemiMajAxLen})", size=13)
     ### PLOT 2
     imgAPng = inputFiles.read_imageAPng(waveband=waveband1,galNum=galNum,onOpenlabs=onOpenlabs)
     armReference = imgAPng
@@ -103,8 +101,8 @@ def main(merge, waveband1, waveband2, galNum, onOpenlabs):
         armReference[i,j] = outlineColor
     frontStartTheta = newOverallMaxTheta if sWise else newOverallMinTheta
     # Plot the "front" of the arm as a line
-    for majaxLen in range(1,int(maxMajAxLen/2)):
-        i,j = createStructs.calcElpsPoint(majaxLen, majaxLen*minMaxRatio, axisRadians, frontStartTheta, (inputCenterR, inputCenterR))
+    for semiMajAxLen in range(1,maxSemiMajAxLen):
+        i,j = createStructs.calcElpsPoint(semiMajAxLen, semiMajAxLen*minMaxRatio, axisRadians, frontStartTheta, (inputCenterR, inputCenterR))
         armReference[i,j] = outlineColor
     # Plot the overall shape of galaxy for ellipse reference
     for i,j in arcsEllipse_Positions[-1].ellipse:
