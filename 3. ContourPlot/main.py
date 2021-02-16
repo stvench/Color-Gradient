@@ -8,7 +8,7 @@ import createStructs
 
 
 
-def main(merge, waveband1, waveband2, galNum, onOpenlabs):
+def main(merge, waveband1, waveband2, galNum, onOpenlabs, makePDF):
     # Get all important info from arcs tsv for the galaxy
     minMaxRatio, minorAxis, majorAxis, axisRadians, inputCenterR, inputCenterC = inputFiles.read_arcsTSV(galNum,onOpenlabs)
     # Get the clustermasks for each waveband, confirm dimensions are equal
@@ -101,7 +101,7 @@ def main(merge, waveband1, waveband2, galNum, onOpenlabs):
     frontStartTheta = newOverallMaxTheta if sWise else newOverallMinTheta
     # Plot the "front" of the arm as a line
     for semiMajAxLen in range(1,maxSemiMajAxLen):
-        i,j = createStructs.calcElpsPoint(semiMajAxLen, semiMajAxLen*minMaxRatio, axisRadians, frontStartTheta, (inputCenterR, inputCenterR))
+        i,j = createStructs.calcElpsPoint(semiMajAxLen, semiMajAxLen*minMaxRatio, axisRadians, frontStartTheta, (inputCenterR, inputCenterC))
         armReference[i,j] = outlineColor
     # Plot the overall shape of galaxy for ellipse reference
     for i,j in arcsEllipse_Positions[-1].ellipse:
@@ -109,15 +109,20 @@ def main(merge, waveband1, waveband2, galNum, onOpenlabs):
     ax[1].imshow(armReference)
     plt.suptitle(f"{galNum}_({waveband1}-{waveband2})_merge({merge})", size=17)
     
-    # plt.savefig(f"runs/runRand200/{galNum}_({waveband1}-{waveband2})_merge({merge}).pdf")
-    plt.show()
+    if (makePDF):
+        plt.savefig(f"runs/runRand200/{galNum}_({waveband1}-{waveband2})_merge({merge}).pdf")
+    else:
+        plt.show()
 
 
 if __name__ == "__main__":
 
 
 
+
     onOpenlabs = False
+    makePDF    = False
+
 
 
 
@@ -132,7 +137,7 @@ if __name__ == "__main__":
             print("-------------------------------------------")
             print(galaxy)
             try:
-                main(merge=1, waveband1='g', waveband2='i', galNum=galaxy.rstrip("\n"), onOpenlabs=onOpenlabs)
+                main(merge=1, waveband1='g', waveband2='i', galNum=galaxy.rstrip("\n"), onOpenlabs=onOpenlabs, makePDF=makePDF)
             except:
                 failedGalaxys.write(galaxy)
                 errCount += 1
@@ -146,11 +151,11 @@ if __name__ == "__main__":
         print(f"{count-errCount}/{count} ({(count-errCount)/count*100:.2f}%) succeeded")
     else:
         ### Local runs
-        main(merge=0, waveband1='g',waveband2='i',galNum="1237660635996291172",onOpenlabs=onOpenlabs)
-        # main(merge=1, waveband1='g',waveband2='i',galNum="1237660635996291172",onOpenlabs=onOpenlabs)
-        # main(merge=2, waveband1='g',waveband2='i',galNum="1237660635996291172",onOpenlabs=onOpenlabs)
+        main(merge=0, waveband1='g',waveband2='i',galNum="1237660635996291172",onOpenlabs=onOpenlabs,makePDF=makePDF)
+        # main(merge=1, waveband1='g',waveband2='i',galNum="1237660635996291172",onOpenlabs=onOpenlabs,makePDF=makePDF)
+        # main(merge=2, waveband1='g',waveband2='i',galNum="1237660635996291172",onOpenlabs=onOpenlabs,makePDF=makePDF)
 
-        # main(merge=0, waveband1='g',waveband2='i',galNum="1237648705658486867",onOpenlabs=onOpenlabs)
-        # main(merge=1, waveband1='g',waveband2='i',galNum="1237648705658486867",onOpenlabs=onOpenlabs)
-        # main(merge=2, waveband1='g',waveband2='i',galNum="1237648705658486867",onOpenlabs=onOpenlabs)
+        # main(merge=0, waveband1='g',waveband2='i',galNum="1237648705658486867",onOpenlabs=onOpenlabs,makePDF=makePDF)
+        # main(merge=1, waveband1='g',waveband2='i',galNum="1237648705658486867",onOpenlabs=onOpenlabs,makePDF=makePDF)
+        # main(merge=2, waveband1='g',waveband2='i',galNum="1237648705658486867",onOpenlabs=onOpenlabs,makePDF=makePDF)
     
