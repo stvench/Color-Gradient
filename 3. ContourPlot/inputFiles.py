@@ -58,6 +58,17 @@ def read_arcsTSV(galNum, onOpenlabs):
         return minMaxRatio, minorAxis, majorAxis, axisRadians, inputCenterR, inputCenterC
 
 
+def read_imageAPng(waveband,galNum,onOpenlabs):
+    """
+    Returns the image as an np array, for use as referene
+    """
+    if (onOpenlabs):
+        FILEPATH = f"/extra/wayne1/research/drdavis/SDSS/SpArcFiRe/2016-09/{waveband}/{galNum[-3:]}/{galNum}/{galNum}-A_input.png"
+    else:
+        FILEPATH = f"C:/Users/sc123/Desktop/gal/5. NonCircular FITS/1. Circle/Sample_Galaxies/{galNum}/{waveband}/{galNum}-A_input.png"
+    imgPng = cv2.imread(FILEPATH)
+    return imgPng
+
 
 def read_clusMask(waveband, galNum, group, onOpenlabs):
     """

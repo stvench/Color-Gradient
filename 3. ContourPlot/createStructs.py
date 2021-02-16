@@ -226,6 +226,32 @@ def calcStartingTheta(semiMajLen, minMaxRatio, axisRadians, center, armsPixels):
 
 
 
+def armOutline(armsPixels):
+    outline=set()
+    for i,j in armsPixels:
+        missing = 0
+        if ((i,j+1) not in armsPixels):
+            missing += 1
+        if ((i,j-1) not in armsPixels):
+            missing += 1
+        if ((i+1,j) not in armsPixels):
+            missing += 1
+        if ((i-1,j) not in armsPixels):
+            missing += 1
+        if ((i+1,j+1) not in armsPixels):
+            missing += 1
+        if ((i+1,j-1) not in armsPixels):
+            missing += 1
+        if ((i-1,j+1) not in armsPixels):
+            missing += 1
+        if ((i-1,j-1) not in armsPixels):
+            missing += 1
+        if (missing >= 3):
+            outline.add( (i,j) )
+    return outline
+
+
+
 class ellipseInfo:
     def __init__(self,majorAxisLen,arc,ellipse,minTheta,maxTheta):
         self.majorAxisLen   = majorAxisLen

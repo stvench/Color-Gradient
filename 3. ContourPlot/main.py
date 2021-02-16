@@ -94,22 +94,25 @@ def main(merge, waveband1, waveband2, galNum, onOpenlabs):
     ax[0].set_xlabel("θ from front", size=13)
     ax[0].set_ylabel(f"Major Axis Length ({minMajAxLen}-{maxMajAxLen})", size=13)
     ### PLOT 2
-    armReference = np.zeros((rows,cols))
-    # Plot the arm
-    for i,j in armsPixels:
-        armReference[i,j] = 1
+    imgAPng = inputFiles.read_imageAPng(waveband=waveband1,galNum=galNum,onOpenlabs=onOpenlabs)
+    armReference = imgAPng
+    outlineColor = np.max(imgAPng)
+    # Plot the arms outline
+    armsPixelsOutline = createStructs.armOutline(armsPixels=armsPixels)
+    for i,j in armsPixelsOutline:
+        armReference[i,j] = outlineColor
     frontStartTheta = newOverallMaxTheta if sWise else newOverallMinTheta
     # Plot the "front" of the arm as a line
     for majaxLen in range(1,int(maxMajAxLen/2)):
         i,j = createStructs.calcElpsPoint(majaxLen, majaxLen*minMaxRatio, axisRadians, frontStartTheta, (inputCenterR, inputCenterR))
-        armReference[i,j] = 0.5
+        armReference[i,j] = outlineColor
     # Plot the overall shape of galaxy for ellipse reference
     for i,j in arcsEllipse_Positions[-1].ellipse:
-        armReference[i,j] = 0.5
+        armReference[i,j] = outlineColor
     ax[1].imshow(armReference)
     plt.suptitle(f"{galNum}_({waveband1}-{waveband2})_merge({merge})", size=17)
     
-    # plt.savefig(f"runRand200/{galNum}_({waveband1}-{waveband2})_merge({merge}).pdf")
+    # plt.savefig(f"runs/runRand200/{galNum}_({waveband1}-{waveband2})_merge({merge}).pdf")
     plt.show()
 
 
@@ -117,7 +120,7 @@ if __name__ == "__main__":
 
 
 
-    onOpenlabs = True
+    onOpenlabs = False
 
 
 
@@ -125,8 +128,8 @@ if __name__ == "__main__":
         ### Openlabs runs
         count = 0
         errCount = 0
-        galFile = open('getItSp.txt','r')           # Each line is a galaxy to test
-        failedGalaxys = open("DEBUGLATER.txt","w")  # Each line is a galaxy that failed
+        galFile = open('data/getItSp.txt','r')           # Each line is a galaxy to test
+        failedGalaxys = open("data/DEBUGLATER.txt","w")  # Each line is a galaxy that failed
         galaxy = galFile.readline()
         while galaxy:
             print("-------------------------------------------")
@@ -147,10 +150,10 @@ if __name__ == "__main__":
     else:
         ### Local runs
         main(merge=0, waveband1='g',waveband2='i',galNum="1237660635996291172",onOpenlabs=onOpenlabs)
-        main(merge=1, waveband1='g',waveband2='i',galNum="1237660635996291172",onOpenlabs=onOpenlabs)
-        main(merge=2, waveband1='g',waveband2='i',galNum="1237660635996291172",onOpenlabs=onOpenlabs)
+        # main(merge=1, waveband1='g',waveband2='i',galNum="1237660635996291172",onOpenlabs=onOpenlabs)
+        # main(merge=2, waveband1='g',waveband2='i',galNum="1237660635996291172",onOpenlabs=onOpenlabs)
 
-        main(merge=0, waveband1='g',waveband2='i',galNum="1237648705658486867",onOpenlabs=onOpenlabs)
-        main(merge=1, waveband1='g',waveband2='i',galNum="1237648705658486867",onOpenlabs=onOpenlabs)
-        main(merge=2, waveband1='g',waveband2='i',galNum="1237648705658486867",onOpenlabs=onOpenlabs)
+        # main(merge=0, waveband1='g',waveband2='i',galNum="1237648705658486867",onOpenlabs=onOpenlabs)
+        # main(merge=1, waveband1='g',waveband2='i',galNum="1237648705658486867",onOpenlabs=onOpenlabs)
+        # main(merge=2, waveband1='g',waveband2='i',galNum="1237648705658486867",onOpenlabs=onOpenlabs)
     
