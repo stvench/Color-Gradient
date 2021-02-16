@@ -114,39 +114,43 @@ def main(merge, waveband1, waveband2, galNum, onOpenlabs):
 
 
 if __name__ == "__main__":
+
+
+
     onOpenlabs = True
 
 
-    ### Openlabs runs
-    count = 0
-    errCount = 0
-    galFile = open('getItSp.txt','r')           # Each line is a galaxy to test
-    failedGalaxys = open("DEBUGLATER.txt","w")  # Each line is a galaxy that failed
-    galaxy = galFile.readline()
-    while galaxy:
-        print("-------------------------------------------")
-        print(galaxy)
-        try:
-            main(merge=1, waveband1='g', waveband2='i', galNum=galaxy.rstrip("\n"), onOpenlabs=onOpenlabs)
-        except:
-            failedGalaxys.write(galaxy)
-            errCount += 1
-            # raise 
+
+    if (onOpenlabs):
+        ### Openlabs runs
+        count = 0
+        errCount = 0
+        galFile = open('getItSp.txt','r')           # Each line is a galaxy to test
+        failedGalaxys = open("DEBUGLATER.txt","w")  # Each line is a galaxy that failed
         galaxy = galFile.readline()
-        if count == 200:
-            break
-        count += 1
-    galFile.close()
-    failedGalaxys.close()
-    print(f"{count-errCount}/{count} ({(count-errCount)/count*100:.2f}%) succeeded")
+        while galaxy:
+            print("-------------------------------------------")
+            print(galaxy)
+            try:
+                main(merge=1, waveband1='g', waveband2='i', galNum=galaxy.rstrip("\n"), onOpenlabs=onOpenlabs)
+            except:
+                failedGalaxys.write(galaxy)
+                errCount += 1
+                # raise 
+            galaxy = galFile.readline()
+            if count == 200:
+                break
+            count += 1
+        galFile.close()
+        failedGalaxys.close()
+        print(f"{count-errCount}/{count} ({(count-errCount)/count*100:.2f}%) succeeded")
+    else:
+        ### Local runs
+        main(merge=0, waveband1='g',waveband2='i',galNum="1237660635996291172",onOpenlabs=onOpenlabs)
+        main(merge=1, waveband1='g',waveband2='i',galNum="1237660635996291172",onOpenlabs=onOpenlabs)
+        main(merge=2, waveband1='g',waveband2='i',galNum="1237660635996291172",onOpenlabs=onOpenlabs)
 
-
-    ### Local runs
-    # main(merge=0, waveband1='g',waveband2='i',galNum="1237660635996291172",onOpenlabs=onOpenlabs)
-    # main(merge=1, waveband1='g',waveband2='i',galNum="1237660635996291172",onOpenlabs=onOpenlabs)
-    # main(merge=2, waveband1='g',waveband2='i',galNum="1237660635996291172",onOpenlabs=onOpenlabs)
-
-    # main(merge=0, waveband1='g',waveband2='i',galNum="1237648705658486867",onOpenlabs=onOpenlabs)
-    # main(merge=1, waveband1='g',waveband2='i',galNum="1237648705658486867",onOpenlabs=onOpenlabs)
-    # main(merge=2, waveband1='g',waveband2='i',galNum="1237648705658486867",onOpenlabs=onOpenlabs)
+        main(merge=0, waveband1='g',waveband2='i',galNum="1237648705658486867",onOpenlabs=onOpenlabs)
+        main(merge=1, waveband1='g',waveband2='i',galNum="1237648705658486867",onOpenlabs=onOpenlabs)
+        main(merge=2, waveband1='g',waveband2='i',galNum="1237648705658486867",onOpenlabs=onOpenlabs)
     
