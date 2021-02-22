@@ -35,7 +35,7 @@ def main(merge, waveband1, waveband2, galNum, onOpenlabs, makePDF):
 
 
     # TODO TODO TODO TODO TODO: Change how I get the color mapping
-    # DONE: Update remvSimThetas function name and return variable name
+    # 
     #
     #
     #
@@ -45,18 +45,10 @@ def main(merge, waveband1, waveband2, galNum, onOpenlabs, makePDF):
         neighbor_aepObjs = [arcsEllipse_Positions[j] for j in np.arange(i-merge,i+merge+1) if (i!=j)]
         groupedThetas = createStructs.groupNeighborThetas(middle=current_aepObj, neighbors=neighbor_aepObjs)
 
-        # LOOP 1 (GETS THE RELATIVE MIN/MAX FOR THIS CURRENT RADIUS)
-        curRadiusMinFlux = None
-        curRadiusMaxFLux = None
-        for theta,pixelList in groupedThetas:
-            for i,j in pixelList:
-                avgFlux = createStructs.calcFlux(i,j,fits1,fits2)
-                if (curRadiusMinFlux is None) or (avgFlux < curRadiusMinFlux):
-                    curRadiusMinFlux = avgFlux
-                if (curRadiusMaxFLux is None) or (avgFlux > curRadiusMaxFLux):
-                    curRadiusMaxFLux = avgFlux
+        # Get min/max avgFlux for current radius aepObject
+        curRadiusMinFlux, curRadiusMaxFLux = createStructs.getMinMaxFlux(groupedThetas=groupedThetas, fits1=fits1, fits2=fits2)
         
-        # LOOP 2 (USES THE PREV LOOPS RESULTS OF MIN/MAX TO SCALE THE VALUES)
+        # Scale each position's avgFlux using the min/max avgFlux
         semiMajAxisIndex = int(current_aepObj.majorAxisLen/2) - minSemiMajAxLen
         for theta,pixelList in groupedThetas:
             totalAvgFlux = 0

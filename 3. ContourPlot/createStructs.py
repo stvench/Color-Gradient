@@ -202,6 +202,20 @@ def calcFlux(i,j,fits1,fits2):
 
 
 
+def getMinMaxFlux(groupedThetas, fits1, fits2):
+    curRadiusMinFlux = None
+    curRadiusMaxFLux = None
+    for theta,pixelList in groupedThetas:
+        for i,j in pixelList:
+            avgFlux = calcFlux(i,j,fits1,fits2)
+            if (curRadiusMinFlux is None) or (avgFlux < curRadiusMinFlux):
+                curRadiusMinFlux = avgFlux
+            if (curRadiusMaxFLux is None) or (avgFlux > curRadiusMaxFLux):
+                curRadiusMaxFLux = avgFlux
+    return curRadiusMinFlux, curRadiusMaxFLux
+
+
+
 def calcElpsPoint(a, b, axisRadians, curTheta, center):
     # https://math.stackexchange.com/questions/315386/ellipse-in-polar-coordinates
     radians = curTheta/180*math.pi
