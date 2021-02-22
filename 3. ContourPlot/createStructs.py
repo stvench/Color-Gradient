@@ -16,11 +16,11 @@ def get_largestArm(galaxyArms):
 
 
 def unionClosestArm(waveband1LargestArm, waveband2AllArms):
-    """ Returns the arm from waveband2AllArms that has
-    the highest overall overlap with waveband1s largest arm.
-        Overlap here is looking at the size of the intersection of the 
-        2 arms over the total size of waveband1's arm
-        (waveband1 && waveband2) / (waveband1)
+    """ Returns the arm from waveband2 that has
+        the highest overall overlap with waveband1s largest arm.
+            -Overlap here is looking at the size of the intersection of the 
+             2 arms over the total size of waveband1's arm
+             (waveband1 && waveband2) / (waveband1)
 
         rtype: set()
     """
@@ -77,24 +77,31 @@ def arm_to_ArcsEllipse(majorAxis, minMaxRatio, axisRadians, armsPixels, center):
 
 
 
-def remvSimThetas(middle, neighbors):
-    ### Change function name, doesnt remove similar thetas across neighbors, just groups thetas together
-    thetaList = []
+def groupNeighborThetas(middle, neighbors):
+    """
+        Takes a single(middle) aep object and a list of neighboring aep objects.
+        
+        For each theta in the middle aep, get all same thetas in the neighboring aep's 
+        and group together, returning a new list of thetas with repsective (i,j) lists
+    """
+    groupedThetas = []
     for theta, i , j in middle.arc:
-        thetaList.append((theta,[(i,j)]))
+        groupedThetas.append((theta,[(i,j)]))
         for aep_Obj in neighbors:
             for Itheta, Ii, Ij in aep_Obj.arc:
                 if (theta == Itheta):
-                    thetaList[-1][1].append((Ii,Ij))
+                    groupedThetas[-1][1].append((Ii,Ij))
                     break
                 if (Itheta > theta):
                     break
-    return thetaList
+    return groupedThetas
 
 
 
 def calcFlux(i,j,fits1,fits2):
-    # Given an (i,j) position, returns the average of all 8 values surronding it, unless on border
+    """
+        Given an (i,j) position, returns the average (float) of all 8 values surrounding it in a square
+    """
     flux = 0
     if i==0:
         if j==0:
@@ -227,6 +234,13 @@ def calcStartingTheta(semiMajLen, minMaxRatio, axisRadians, center, armsPixels):
 
 
 def armOutline(armsPixels):
+    """
+        Given pixels of an arm, gets only pixels that have >= threshold missing in
+        a square around it, returing an outline of the arm
+
+        Increase threshold to get thicker outline, Smaller threshold has some points missing from outline
+    """
+    threshold = 3
     outline=set()
     for i,j in armsPixels:
         missing = 0
@@ -246,13 +260,49 @@ def armOutline(armsPixels):
             missing += 1
         if ((i-1,j-1) not in armsPixels):
             missing += 1
-        if (missing >= 3):
+        if (missing >= threshold):
             outline.add( (i,j) )
     return outline
 
 
 
+def updateThetaStarts(overallMinTheta, overallMaxTheta, arcsEllipse_Positions):
+    """
+        Change all ellipseinfo objects thetas to be relative to start, 0 from FRONT
+
+        Returns new overall min/max thetas, sWise bool
+    """
+    needSub360 = True if overallMaxTheta-overallMinTheta >= 360 else False
+    newOverallMinTheta = None
+    newOverallMaxTheta = None
+    for ae_pObj in arcsEllipse_Positions:
+        arcUpdatedThetas = []
+        for theta,i,j in ae_pObj.arc:
+            if (needSub360):
+                if theta>360:
+                    theta-=360
+            if newOverallMinTheta is None or theta<newOverallMinTheta:
+                newOverallMinTheta = theta
+            if newOverallMaxTheta is None or theta>newOverallMaxTheta:
+                newOverallMaxTheta = theta
+            arcUpdatedThetas.append( (theta,i,j) )
+        ae_pObj.arc = arcUpdatedThetas
+    armsFrontTheta = arcsEllipse_Positions[0].arc[0][0]
+    armsEndTheta   = arcsEllipse_Positions[-1].arc[-1][0]
+    sWise = True if armsFrontTheta>armsEndTheta else False
+    return newOverallMinTheta, newOverallMaxTheta, sWise
+
+
+
+
 class ellipseInfo:
+    """
+        majorAxisLen  
+        arc  
+        ellipse  
+        minTheta  
+        maxTheta  
+    """
     def __init__(self,majorAxisLen,arc,ellipse,minTheta,maxTheta):
         self.majorAxisLen   = majorAxisLen
         self.arc            = arc

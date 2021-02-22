@@ -16,52 +16,39 @@ def main(merge, waveband1, waveband2, galNum, onOpenlabs, makePDF):
     pixelLoc2, rows2, cols2 = inputFiles.read_clusMask(waveband=waveband2,galNum=galNum,group=True,onOpenlabs=onOpenlabs)
     rows = rows1 if rows1==rows2 else None
     cols = cols1 if cols1==cols2 else None
-    # Get union of the 2 wavebands arms
-    # 1. Get largest arm of waveband1 clustermask, pixelLoc1
-    # 2. Loop through the pixelLoc2, arm postions of waveband2 and find the one closest to armsPixels1 in RAW PIXEL SIZE or PERCENTAGE SIZE?
-    # 3. Union of the two, place into armsPixels
     armsPixels1 = createStructs.get_largestArm(galaxyArms=pixelLoc1)
     armsPixels  = createStructs.unionClosestArm(waveband1LargestArm=armsPixels1, waveband2AllArms=pixelLoc2)
-    # Create the arcsEllipse_Positions
+    # Create the arcsEllipse_Positions & update thetas 
     arcsEllipse_Positions, overallMinTheta, overallMaxTheta = createStructs.arm_to_ArcsEllipse(majorAxis=majorAxis, minMaxRatio=minMaxRatio, axisRadians=axisRadians, armsPixels=armsPixels, center=(inputCenterR, inputCenterR))
+    newOverallMinTheta, newOverallMaxTheta, sWise = createStructs.updateThetaStarts(overallMinTheta=overallMinTheta, overallMaxTheta=overallMaxTheta, arcsEllipse_Positions=arcsEllipse_Positions)
 
-    # LOOP 1 (CHANGES ELLIPSEINFO OBJECTS THETAS RELATIVE TO START OF 0 from FRONT) ###############################################################################################################################
-    needSub360 = True if overallMaxTheta-overallMinTheta >= 360 else False
-    newOverallMinTheta = None
-    newOverallMaxTheta = None
-    for ae_pObj in arcsEllipse_Positions:
-        arcUpdatedThetas = []
-        for theta,i,j in ae_pObj.arc:
-            if (needSub360):
-                if theta>360:
-                    theta-=360
-            if newOverallMinTheta is None or theta<newOverallMinTheta:
-                newOverallMinTheta = theta
-            if newOverallMaxTheta is None or theta>newOverallMaxTheta:
-                newOverallMaxTheta = theta
-            arcUpdatedThetas.append( (theta,i,j) )
-        ae_pObj.arc = arcUpdatedThetas
-    armsFrontTheta = arcsEllipse_Positions[0].arc[0][0]
-    armsEndTheta   = arcsEllipse_Positions[-1].arc[-1][0]
-    sWise = True if armsFrontTheta>armsEndTheta else False
-
+    # Initialize variables for plotting
     minSemiMajAxLen = int(arcsEllipse_Positions[0].majorAxisLen/2)
     maxSemiMajAxLen = int(arcsEllipse_Positions[-1].majorAxisLen/2)
-    x = np.arange(0,newOverallMaxTheta-newOverallMinTheta+1)    # +1 needed as not inclusive range
-    y = np.arange(minSemiMajAxLen,maxSemiMajAxLen+1)            # +1 needed as not inclusive range
-    FINALPLOT = np.ones((len(y),len(x),3), dtype=float) # array of [1.0,1.0,1.0] (float needed as plt.imshow() for RBGs floats bounded by [0...1], with 1 as WHITE)
+    xRange = newOverallMaxTheta-newOverallMinTheta+1
+    yRange = maxSemiMajAxLen-minSemiMajAxLen+1
+    FINALPLOT = np.ones((yRange,xRange,3), dtype=float) # array of [1.0,1.0,1.0] (plt.imshow() for RBGs floats bounded by [0...1], 1==WHITE)
     fits1 = inputFiles.readFits(waveband1,galNum,onOpenlabs)
     fits2 = inputFiles.readFits(waveband2,galNum,onOpenlabs)
-    # LOOP 2            ##################################       ADD A LOOP HERE FOR THE VALUES OF HOW MANY TO MERGE, DON'T NEED TO REDO EVERYTHING BEFORE
+
+
+
+
+    # TODO TODO TODO TODO TODO: Change how I get the color mapping
+    # DONE: Update remvSimThetas function name and return variable name
+    #
+    #
+    #
+    #
     for i in range(merge,len(arcsEllipse_Positions)-merge):
         current_aepObj = arcsEllipse_Positions[i]
         neighbor_aepObjs = [arcsEllipse_Positions[j] for j in np.arange(i-merge,i+merge+1) if (i!=j)]
-        uniqueNeighborThetas = createStructs.remvSimThetas(middle=current_aepObj, neighbors=neighbor_aepObjs)
+        groupedThetas = createStructs.groupNeighborThetas(middle=current_aepObj, neighbors=neighbor_aepObjs)
 
-        # LOOP 1 (GETS THE RELATIVE MIN/MAX FOR THE CURRENT RADIUS)   ################# DO THIS DIRECTLY IN remvSIMTHETAS, ONE LESS LOOP?
+        # LOOP 1 (GETS THE RELATIVE MIN/MAX FOR THIS CURRENT RADIUS)
         curRadiusMinFlux = None
         curRadiusMaxFLux = None
-        for theta,pixelList in uniqueNeighborThetas:
+        for theta,pixelList in groupedThetas:
             for i,j in pixelList:
                 avgFlux = createStructs.calcFlux(i,j,fits1,fits2)
                 if (curRadiusMinFlux is None) or (avgFlux < curRadiusMinFlux):
@@ -71,7 +58,7 @@ def main(merge, waveband1, waveband2, galNum, onOpenlabs, makePDF):
         
         # LOOP 2 (USES THE PREV LOOPS RESULTS OF MIN/MAX TO SCALE THE VALUES)
         semiMajAxisIndex = int(current_aepObj.majorAxisLen/2) - minSemiMajAxLen
-        for theta,pixelList in uniqueNeighborThetas:
+        for theta,pixelList in groupedThetas:
             totalAvgFlux = 0
             for i,j in pixelList:
                 avgFlux = createStructs.calcFlux(i,j,fits1,fits2)
@@ -83,7 +70,11 @@ def main(merge, waveband1, waveband2, galNum, onOpenlabs, makePDF):
                 relScale -= 0.01
             FINALPLOT[semiMajAxisIndex,thetaIndex] = relScale # Automatically converts relScale -> [relScale, relScale, relScale]
 
-    # PLOTTING ###############################################################################################################################
+
+
+
+
+    # PLOTTING
     fig,ax = plt.subplots(1,2,gridspec_kw={'width_ratios': [3, 1]})
     ### PLOT 1 (actual color difference)
     ax[0].imshow(FINALPLOT, origin="lower", extent = [0, newOverallMaxTheta-newOverallMinTheta+1, minSemiMajAxLen,maxSemiMajAxLen+1])
@@ -92,25 +83,24 @@ def main(merge, waveband1, waveband2, galNum, onOpenlabs, makePDF):
     ax[0].set_ylabel(f"Major Axis Length ({minSemiMajAxLen}-{maxSemiMajAxLen})", size=13)
     ### PLOT 2
     imgAPng = inputFiles.read_imageAPng(waveband=waveband1,galNum=galNum,onOpenlabs=onOpenlabs)
-    armReference = imgAPng
     outlineColor = np.max(imgAPng)
     # Plot the arms outline
     armsPixelsOutline = createStructs.armOutline(armsPixels=armsPixels)
     for i,j in armsPixelsOutline:
-        armReference[i,j] = outlineColor
+        imgAPng[i,j] = outlineColor
     frontStartTheta = newOverallMaxTheta if sWise else newOverallMinTheta
     # Plot the "front" of the arm as a line
     for semiMajAxLen in range(1,maxSemiMajAxLen):
         i,j = createStructs.calcElpsPoint(semiMajAxLen, semiMajAxLen*minMaxRatio, axisRadians, frontStartTheta, (inputCenterR, inputCenterC))
-        armReference[i,j] = outlineColor
+        imgAPng[i,j] = outlineColor
     # Plot the overall shape of galaxy for ellipse reference
     for i,j in arcsEllipse_Positions[-1].ellipse:
-        armReference[i,j] = outlineColor
-    ax[1].imshow(armReference)
+        imgAPng[i,j] = outlineColor
+    ax[1].imshow(imgAPng)
     plt.suptitle(f"{galNum}_({waveband1}-{waveband2})_merge({merge})", size=17)
     
     if (makePDF):
-        plt.savefig(f"runs/runRand200/{galNum}_({waveband1}-{waveband2})_merge({merge}).pdf")
+        plt.savefig(f"runs/{galNum}_({waveband1}-{waveband2})_merge({merge}).pdf")
     else:
         plt.show()
 
