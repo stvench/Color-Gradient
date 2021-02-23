@@ -55,9 +55,9 @@ def main(merge, waveband1, waveband2, galNum, onOpenlabs, makePDF):
             for i,j in pixelList:
                 avgFlux = createStructs.calcFlux(i,j,fits1,fits2)
                 totalAvgFlux += avgFlux
-            totalAvgFlux = totalAvgFlux/len(pixelList)
+            totalAvgFlux /= len(pixelList)
             thetaIndex = (newOverallMaxTheta - theta) if sWise else (theta - newOverallMinTheta)
-            relScale = abs(avgFlux-curRadiusMinFlux) / abs(curRadiusMaxFLux-curRadiusMinFlux)
+            relScale = abs(totalAvgFlux-curRadiusMinFlux) / abs(curRadiusMaxFLux-curRadiusMinFlux)
             if relScale == 1:            # If its equal to the max, tone down a little so can still see it
                 relScale -= 0.01
             FINALPLOT[semiMajAxisIndex,thetaIndex] = relScale # Automatically converts relScale -> [relScale, relScale, relScale]
