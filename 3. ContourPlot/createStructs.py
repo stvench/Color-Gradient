@@ -15,6 +15,23 @@ def get_largestArm(galaxyArms):
 
 
 
+def get_PositionArm(galaxyArms,i,j):
+    """ 
+        Returns arm closest to the (i,j) position <-- (x,y) or (y,x)
+
+        CHANGE THIS TO LOOK FOR CLOSEST MATCH NOT EXACT MATCH?
+
+        MAKE SECOND FUNCTION TO GET SECOND LARGEST ARM?
+    """
+    armGood = set()
+    for arm in galaxyArms.values():
+        for iI,jJ in arm:
+            if iI==i and jJ==j:
+                armGood = arm
+    return armGood
+
+
+
 def unionClosestArm(waveband1LargestArm, waveband2AllArms):
     """ Returns the arm from waveband2 that has
         the highest overall overlap with waveband1s largest arm.
@@ -305,7 +322,6 @@ def updateThetaStarts(overallMinTheta, overallMaxTheta, arcsEllipse_Positions):
     armsEndTheta   = arcsEllipse_Positions[-1].arc[-1][0]
     sWise = True if armsFrontTheta>armsEndTheta else False
     return newOverallMinTheta, newOverallMaxTheta, sWise
-
 
 
 

@@ -16,7 +16,11 @@ def main(merge, waveband1, waveband2, galNum, onOpenlabs, makePDF):
     pixelLoc2, rows2, cols2 = inputFiles.read_clusMask(waveband=waveband2,galNum=galNum,group=True,onOpenlabs=onOpenlabs)
     rows = rows1 if rows1==rows2 else None
     cols = cols1 if cols1==cols2 else None
+
+    # Use get_largestArm() for auto || get_PositionArm() for manual selection, looking at clusMask position of arms
     armsPixels1 = createStructs.get_largestArm(galaxyArms=pixelLoc1)
+    ######## armsPixels1 = createStructs.get_PositionArm(galaxyArms=pixelLoc1,i=127,j=147)
+
     armsPixels  = createStructs.unionClosestArm(waveband1LargestArm=armsPixels1, waveband2AllArms=pixelLoc2)
     # Create the arcsEllipse_Positions & update thetas 
     arcsEllipse_Positions, overallMinTheta, overallMaxTheta = createStructs.arm_to_ArcsEllipse(majorAxis=majorAxis, minMaxRatio=minMaxRatio, axisRadians=axisRadians, armsPixels=armsPixels, center=(inputCenterR, inputCenterR))
@@ -141,6 +145,7 @@ if __name__ == "__main__":
         print(f"{count-errCount}/{count} ({(count-errCount)/count*100:.2f}%) succeeded")
     else:
         ### Local runs
+        #  1172 get_PositionArm Arm: Extra1(i=127,j=137)    Arm Extra2(i=127,j=147)
         main(merge=0, waveband1='g',waveband2='i',galNum="1237660635996291172",onOpenlabs=onOpenlabs,makePDF=makePDF)
         # main(merge=1, waveband1='g',waveband2='i',galNum="1237660635996291172",onOpenlabs=onOpenlabs,makePDF=makePDF)
         # main(merge=2, waveband1='g',waveband2='i',galNum="1237660635996291172",onOpenlabs=onOpenlabs,makePDF=makePDF)
