@@ -74,7 +74,7 @@ def main(merge, waveband1, waveband2, galNum, onOpenlabs, makePDF):
     ax[0].imshow(FINALPLOT, origin="lower", extent = [0, newOverallMaxTheta-newOverallMinTheta+1, minSemiMajAxLen,maxSemiMajAxLen+1])
     ax[0].set_aspect(2)
     ax[0].set_xlabel("θ from front", size=13)
-    ax[0].set_ylabel(f"Major Axis Length ({minSemiMajAxLen}-{maxSemiMajAxLen})", size=13)
+    ax[0].set_ylabel(f"Semi-Major Axis Length ({minSemiMajAxLen}-{maxSemiMajAxLen})", size=13)
     ### PLOT 2
     imgAPng = inputFiles.read_imageAPng(waveband=waveband1,galNum=galNum,onOpenlabs=onOpenlabs)
     outlineColor = np.max(imgAPng)
@@ -97,6 +97,7 @@ def main(merge, waveband1, waveband2, galNum, onOpenlabs, makePDF):
         plt.savefig(f"runs/{galNum}_({waveband1}-{waveband2})_merge({merge}).pdf")
     else:
         plt.show()
+    plt.close()
 
 
 if __name__ == "__main__":
@@ -112,16 +113,21 @@ if __name__ == "__main__":
 
     if (onOpenlabs):
         ### Openlabs runs
-        count = 0
+
+        ### 1. Should create a runs folder
+        ### 2. Already needs the data folder
+        count    = 1
         errCount = 0
-        galFile = open('data/getItSp.txt','r')           # Each line is a galaxy to test
+        galFile       = open('data/getItSp.txt','r')           # Each line is a galaxy to test
         failedGalaxys = open("data/DEBUGLATER.txt","w")  # Each line is a galaxy that failed
         galaxy = galFile.readline()
         while galaxy:
             print("-------------------------------------------")
-            print(galaxy)
+            print(count,galaxy)
             try:
-                main(merge=1, waveband1='g', waveband2='i', galNum=galaxy.rstrip("\n"), onOpenlabs=onOpenlabs, makePDF=makePDF)
+                main(merge=0, waveband1='g', waveband2='i', galNum=galaxy.rstrip("\n"), onOpenlabs=onOpenlabs, makePDF=makePDF)
+            except KeyboardInterrupt:
+                break
             except:
                 failedGalaxys.write(galaxy)
                 errCount += 1
