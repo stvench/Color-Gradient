@@ -31,27 +31,23 @@ def main(merge, waveband1, waveband2, galNum, onOpenlabs, makePDF):
     fits1 = inputFiles.readFits(waveband1,galNum,onOpenlabs)
     fits2 = inputFiles.readFits(waveband2,galNum,onOpenlabs)
 
-    # find overall min/max flux
-    overallMinFlux = None
-    overallMaxFlux = None
-    for i in range(merge,len(arcsEllipse_Positions)-merge): # SHOULD CALCULATE MIN/MAX FLUX FROM CURRENT AEPOBJ DIRECTLY, dont need neighbors-extra work
-        current_aepObj = arcsEllipse_Positions[i]
-        neighbor_aepObjs = [arcsEllipse_Positions[j] for j in np.arange(i-merge,i+merge+1) if (i!=j)]
-        groupedThetas = createStructs.groupNeighborThetas(middle=current_aepObj, neighbors=neighbor_aepObjs)
-        curRadiusMinFlux, curRadiusMaxFlux = createStructs.getMinMaxFlux(groupedThetas=groupedThetas, fits1=fits1, fits2=fits2)
-        if (overallMinFlux is None) or (curRadiusMinFlux < overallMinFlux):
-            overallMinFlux = curRadiusMinFlux
-        if (overallMaxFlux is None) or (curRadiusMaxFlux > overallMaxFlux):
-            overallMaxFlux = curRadiusMaxFlux
 
-    # Make bins with range of min/max flux
-    nBins = 100
-    bins = np.linspace(overallMinFlux,overallMaxFlux,nBins)
+
+
+    # TODO TODO TODO TODO TODO: Change how I get the color mapping
+    # 
+    #
+    #
+    #
+    #
     for i in range(merge,len(arcsEllipse_Positions)-merge):
         current_aepObj = arcsEllipse_Positions[i]
         neighbor_aepObjs = [arcsEllipse_Positions[j] for j in np.arange(i-merge,i+merge+1) if (i!=j)]
         groupedThetas = createStructs.groupNeighborThetas(middle=current_aepObj, neighbors=neighbor_aepObjs)
 
+        # Get min/max avgFlux for current radius aepObject
+        curRadiusMinFlux, curRadiusMaxFLux = createStructs.getMinMaxFlux(groupedThetas=groupedThetas, fits1=fits1, fits2=fits2)
+        
         # Scale each position's avgFlux using the min/max avgFlux
         semiMajAxisIndex = int(current_aepObj.majorAxisLen/2) - minSemiMajAxLen
         for theta,pixelList in groupedThetas:
@@ -61,12 +57,14 @@ def main(merge, waveband1, waveband2, galNum, onOpenlabs, makePDF):
                 totalAvgFlux += avgFlux
             totalAvgFlux /= len(pixelList)
             thetaIndex = (newOverallMaxTheta - theta) if sWise else (theta - newOverallMinTheta)
-            for i in range(nBins-1):
-                # if the totalAvgFlux falls in between a bin range
-                if (bins[i]<=totalAvgFlux and totalAvgFlux<=bins[i+1]) or (bins[i]>=totalAvgFlux and totalAvgFlux>=bins[i+1]):
-                    break
-            relScale = i/nBins
+            relScale = abs(totalAvgFlux-curRadiusMinFlux) / abs(curRadiusMaxFLux-curRadiusMinFlux)
+            if relScale == 1:            # If its equal to the max, tone down a little so can still see it
+                relScale -= 0.01
             FINALPLOT[semiMajAxisIndex,thetaIndex] = relScale # Automatically converts relScale -> [relScale, relScale, relScale]
+
+
+
+
 
     # PLOTTING
     fig,ax = plt.subplots(1,2,gridspec_kw={'width_ratios': [3, 1]})
