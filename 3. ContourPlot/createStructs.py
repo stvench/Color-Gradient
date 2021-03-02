@@ -1,5 +1,5 @@
 import math
-
+import numpy as np
 
 
 def get_largestArm(galaxyArms):
@@ -220,6 +220,9 @@ def calcFlux(i,j,fits1,fits2):
 
 
 def getMinMaxFlux(groupedThetas, fits1, fits2):
+    """
+    Compute the min/max flux of this groupedTheta
+    """
     curRadiusMinFlux = None
     curRadiusMaxFLux = None
     for theta,pixelList in groupedThetas:
@@ -230,6 +233,25 @@ def getMinMaxFlux(groupedThetas, fits1, fits2):
             if (curRadiusMaxFLux is None) or (avgFlux > curRadiusMaxFLux):
                 curRadiusMaxFLux = avgFlux
     return curRadiusMinFlux, curRadiusMaxFLux
+
+
+
+def calcOverallMinMaxFlux(arcsEllipse_Positions,merge,fits1,fits2):
+    """
+    Find the overall min/max flux for every aepObj's grouped thetas
+    """
+    overallMinFlux = None
+    overallMaxFlux = None
+    for i in range(merge,len(arcsEllipse_Positions)-merge): # SHOULD CALCULATE MIN/MAX FLUX FROM CURRENT AEPOBJ DIRECTLY, dont need neighbors-extra work
+        current_aepObj = arcsEllipse_Positions[i]
+        neighbor_aepObjs = [arcsEllipse_Positions[j] for j in np.arange(i-merge,i+merge+1) if (i!=j)]
+        groupedThetas = groupNeighborThetas(middle=current_aepObj, neighbors=neighbor_aepObjs)
+        curRadiusMinFlux, curRadiusMaxFlux = getMinMaxFlux(groupedThetas=groupedThetas, fits1=fits1, fits2=fits2)
+        if (overallMinFlux is None) or (curRadiusMinFlux < overallMinFlux):
+            overallMinFlux = curRadiusMinFlux
+        if (overallMaxFlux is None) or (curRadiusMaxFlux > overallMaxFlux):
+            overallMaxFlux = curRadiusMaxFlux
+    return overallMinFlux, overallMaxFlux
 
 
 

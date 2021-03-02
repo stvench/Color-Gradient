@@ -1,6 +1,8 @@
 from astropy.io import fits
 import matplotlib.pyplot as plt
 import numpy as np
+from scipy.spatial import ConvexHull, convex_hull_plot_2d
+
 
 
 import inputFiles
@@ -29,34 +31,22 @@ def main(merge, waveband1, waveband2, galNum, onOpenlabs, makePDF):
     # Initialize variables for plotting
     minSemiMajAxLen = int(arcsEllipse_Positions[0].majorAxisLen/2)
     maxSemiMajAxLen = int(arcsEllipse_Positions[-1].majorAxisLen/2)
-    xRange = newOverallMaxTheta-newOverallMinTheta+1
-    yRange = maxSemiMajAxLen-minSemiMajAxLen+1
+    xRange = newOverallMaxTheta-newOverallMinTheta+1     # Columns
+    yRange = maxSemiMajAxLen-minSemiMajAxLen+1           # Rows
     FINALPLOT = np.zeros((yRange,xRange,3), dtype=float) # array of [1.0,1.0,1.0] (plt.imshow() for RBGs floats bounded by [0...1], 1==WHITE)
     fits1 = inputFiles.readFits(waveband1,galNum,onOpenlabs)
     fits2 = inputFiles.readFits(waveband2,galNum,onOpenlabs)
 
-    # find overall min/max flux
-    overallMinFlux = None
-    overallMaxFlux = None
-    for i in range(merge,len(arcsEllipse_Positions)-merge): # SHOULD CALCULATE MIN/MAX FLUX FROM CURRENT AEPOBJ DIRECTLY, dont need neighbors-extra work
-        current_aepObj = arcsEllipse_Positions[i]
-        neighbor_aepObjs = [arcsEllipse_Positions[j] for j in np.arange(i-merge,i+merge+1) if (i!=j)]
-        groupedThetas = createStructs.groupNeighborThetas(middle=current_aepObj, neighbors=neighbor_aepObjs)
-        curRadiusMinFlux, curRadiusMaxFlux = createStructs.getMinMaxFlux(groupedThetas=groupedThetas, fits1=fits1, fits2=fits2)
-        if (overallMinFlux is None) or (curRadiusMinFlux < overallMinFlux):
-            overallMinFlux = curRadiusMinFlux
-        if (overallMaxFlux is None) or (curRadiusMaxFlux > overallMaxFlux):
-            overallMaxFlux = curRadiusMaxFlux
-
     # Make bins with range of min/max flux
     nBins = 100
+    overallMinFlux, overallMaxFlux = createStructs.calcOverallMinMaxFlux(arcsEllipse_Positions=arcsEllipse_Positions,merge=merge,fits1=fits1,fits2=fits2)
     bins = np.linspace(overallMinFlux,overallMaxFlux,nBins)
+
+    # Calculate fluxs into FINALPLOT
     for i in range(merge,len(arcsEllipse_Positions)-merge):
         current_aepObj = arcsEllipse_Positions[i]
         neighbor_aepObjs = [arcsEllipse_Positions[j] for j in np.arange(i-merge,i+merge+1) if (i!=j)]
         groupedThetas = createStructs.groupNeighborThetas(middle=current_aepObj, neighbors=neighbor_aepObjs)
-
-        # Scale each position's avgFlux using the min/max avgFlux
         semiMajAxisIndex = int(current_aepObj.majorAxisLen/2) - minSemiMajAxLen
         for theta,pixelList in groupedThetas:
             totalAvgFlux = 0
@@ -72,6 +62,27 @@ def main(merge, waveband1, waveband2, galNum, onOpenlabs, makePDF):
             relScale = 1-i/nBins
             FINALPLOT[semiMajAxisIndex,thetaIndex] = relScale # Automatically converts relScale -> [relScale, relScale, relScale]
 
+    # Get all points in FINALPLOT that are non-zero, put in np array, compute Hull(vertices?)
+    coords = []
+    for row in range(0,FINALPLOT.shape[0]):
+        for col in range(0,FINALPLOT.shape[1]):
+            if np.all( FINALPLOT[row,col]!=0 ):
+                coords.append( [col,row] )
+
+            # GET POINTS THAT ARE ON THE OUTLINE OF THE PLOT
+
+
+
+
+    coords = np.array(coords)
+    hull = ConvexHull(coords)
+
+    # Reverse compute the pixels within convex hull
+
+
+
+
+
     # PLOTTING  the WHITER it is, the larger WAVEBAND2 is.
     #           ### WHITE means the MINIMUM difference, meaning WAVEBAND2 is at its largest
     #           ### if negative range, waveband2>waveband1, if positive range, waveband2<waveband1
@@ -84,6 +95,8 @@ def main(merge, waveband1, waveband2, galNum, onOpenlabs, makePDF):
     ax[0].set_aspect(2)
     ax[0].set_xlabel("θ from front", size=13)
     ax[0].set_ylabel(f"Semi-Major Axis Length ({0}-{maxSemiMajAxLen-minSemiMajAxLen})", size=13)
+    for simplex in hull.simplices:
+        ax[0].plot(coords[simplex, 0], coords[simplex, 1], '-',color ='red')
     ### PLOT 2
     imgAPng = inputFiles.read_imageAPng(waveband=waveband1,galNum=galNum,onOpenlabs=onOpenlabs)
     outlineColor = np.max(imgAPng)
