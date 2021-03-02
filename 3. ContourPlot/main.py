@@ -31,7 +31,7 @@ def main(merge, waveband1, waveband2, galNum, onOpenlabs, makePDF):
     maxSemiMajAxLen = int(arcsEllipse_Positions[-1].majorAxisLen/2)
     xRange = newOverallMaxTheta-newOverallMinTheta+1
     yRange = maxSemiMajAxLen-minSemiMajAxLen+1
-    FINALPLOT = np.ones((yRange,xRange,3), dtype=float) # array of [1.0,1.0,1.0] (plt.imshow() for RBGs floats bounded by [0...1], 1==WHITE)
+    FINALPLOT = np.zeros((yRange,xRange,3), dtype=float) # array of [1.0,1.0,1.0] (plt.imshow() for RBGs floats bounded by [0...1], 1==WHITE)
     fits1 = inputFiles.readFits(waveband1,galNum,onOpenlabs)
     fits2 = inputFiles.readFits(waveband2,galNum,onOpenlabs)
 
@@ -69,16 +69,21 @@ def main(merge, waveband1, waveband2, galNum, onOpenlabs, makePDF):
                 # if the totalAvgFlux falls in between a bin range
                 if (bins[i]<=totalAvgFlux and totalAvgFlux<=bins[i+1]) or (bins[i]>=totalAvgFlux and totalAvgFlux>=bins[i+1]):
                     break
-            relScale = i/nBins
+            relScale = 1-i/nBins
             FINALPLOT[semiMajAxisIndex,thetaIndex] = relScale # Automatically converts relScale -> [relScale, relScale, relScale]
 
-    # PLOTTING
+    # PLOTTING  the WHITER it is, the larger WAVEBAND2 is.
+    #           ### WHITE means the MINIMUM difference, meaning WAVEBAND2 is at its largest
+    #           ### if negative range, waveband2>waveband1, if positive range, waveband2<waveband1
+    #           ###     Take the range of flux, min(0) to max(100), and take current flux(5). To get i, iterate 
+    #           ###     through the range until current is in between one of the ranges. Take that i, which in this 
+    #           ###     case is very small(5/100 == 5) and put into relScale = 1-(5/100) to get 0.95, which is WHITE
     fig,ax = plt.subplots(1,2,gridspec_kw={'width_ratios': [3, 1]})
     ### PLOT 1 (actual color difference)
-    ax[0].imshow(FINALPLOT, origin="lower", extent = [0, newOverallMaxTheta-newOverallMinTheta+1, minSemiMajAxLen,maxSemiMajAxLen+1])
+    ax[0].imshow(FINALPLOT, origin="lower", extent = [0, newOverallMaxTheta-newOverallMinTheta+1, 0,maxSemiMajAxLen-minSemiMajAxLen+1])
     ax[0].set_aspect(2)
     ax[0].set_xlabel("θ from front", size=13)
-    ax[0].set_ylabel(f"Semi-Major Axis Length ({minSemiMajAxLen}-{maxSemiMajAxLen})", size=13)
+    ax[0].set_ylabel(f"Semi-Major Axis Length ({0}-{maxSemiMajAxLen-minSemiMajAxLen})", size=13)
     ### PLOT 2
     imgAPng = inputFiles.read_imageAPng(waveband=waveband1,galNum=galNum,onOpenlabs=onOpenlabs)
     outlineColor = np.max(imgAPng)
