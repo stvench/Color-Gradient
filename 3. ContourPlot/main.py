@@ -62,21 +62,19 @@ def main(merge, waveband1, waveband2, galNum, onOpenlabs, makePDF):
             relScale = 1-i/nBins
             FINALPLOT[semiMajAxisIndex,thetaIndex] = relScale # Automatically converts relScale -> [relScale, relScale, relScale]
 
-    # Get all points in FINALPLOT that are non-zero, put in np array, compute Hull(vertices?)
+    # Get all points in FINALPLOT that are non-zero, put in np array, compute CONVEX HULL
     coords = []
     for row in range(0,FINALPLOT.shape[0]):
         for col in range(0,FINALPLOT.shape[1]):
             if np.all( FINALPLOT[row,col]!=0 ):
                 coords.append( [col,row] )
 
-            # GET POINTS THAT ARE ON THE OUTLINE OF THE PLOT
-
-
-
-
+            # GET POINTS THAT ARE ON THE OUTLINE OF THE PLOT plot lines as reference
+            else:
+                # check border values
+                pass
     coords = np.array(coords)
     hull = ConvexHull(coords)
-
     # Reverse compute the pixels within convex hull
 
 
@@ -84,11 +82,11 @@ def main(merge, waveband1, waveband2, galNum, onOpenlabs, makePDF):
 
 
     # PLOTTING  the WHITER it is, the larger WAVEBAND2 is.
-    #           ### WHITE means the MINIMUM difference, meaning WAVEBAND2 is at its largest
-    #           ### if negative range, waveband2>waveband1, if positive range, waveband2<waveband1
-    #           ###     Take the range of flux, min(0) to max(100), and take current flux(5). To get i, iterate 
-    #           ###     through the range until current is in between one of the ranges. Take that i, which in this 
-    #           ###     case is very small(5/100 == 5) and put into relScale = 1-(5/100) to get 0.95, which is WHITE
+               ### WHITE means the MINIMUM difference, meaning WAVEBAND2 is at its largest
+               ### if negative range, waveband2>waveband1, if positive range, waveband2<waveband1
+               ###     Take the range of flux, min(0) to max(100), and take current flux(5). To get i, iterate 
+               ###     through the range until current is in between one of the ranges. Take that i, which in this 
+               ###     case is very small(5/100 == 5) and put into relScale = 1-(5/100) to get 0.95, which is WHITE
     fig,ax = plt.subplots(1,2,gridspec_kw={'width_ratios': [3, 1]})
     ### PLOT 1 (actual color difference)
     ax[0].imshow(FINALPLOT, origin="lower", extent = [0, newOverallMaxTheta-newOverallMinTheta+1, 0,maxSemiMajAxLen-minSemiMajAxLen+1])
@@ -96,7 +94,7 @@ def main(merge, waveband1, waveband2, galNum, onOpenlabs, makePDF):
     ax[0].set_xlabel("θ from front", size=13)
     ax[0].set_ylabel(f"Semi-Major Axis Length ({0}-{maxSemiMajAxLen-minSemiMajAxLen})", size=13)
     for simplex in hull.simplices:
-        ax[0].plot(coords[simplex, 0], coords[simplex, 1], '-',color ='red')
+        ax[0].plot(coords[simplex, 0], coords[simplex, 1], '--',color ='red')
     ### PLOT 2
     imgAPng = inputFiles.read_imageAPng(waveband=waveband1,galNum=galNum,onOpenlabs=onOpenlabs)
     outlineColor = np.max(imgAPng)
@@ -113,13 +111,15 @@ def main(merge, waveband1, waveband2, galNum, onOpenlabs, makePDF):
     for i,j in arcsEllipse_Positions[-1].ellipse:
         imgAPng[i,j] = outlineColor
     ax[1].imshow(imgAPng)
+
     plt.suptitle(f"{galNum}_({waveband1}-{waveband2})_merge({merge})", size=17)
-    
     if (makePDF):
-        plt.savefig(f"runs/{galNum}_({waveband1}-{waveband2})_merge({merge}).pdf")
+        plt.savefig(f"runs/newRunRand200/{galNum}_({waveband1}-{waveband2})_merge({merge}).pdf")
     else:
         plt.show()
     plt.close()
+
+
 
 
 if __name__ == "__main__":
@@ -127,8 +127,8 @@ if __name__ == "__main__":
 
 
 
-    onOpenlabs = False
-    makePDF    = False
+    onOpenlabs = True
+    makePDF    = True
 
 
 
