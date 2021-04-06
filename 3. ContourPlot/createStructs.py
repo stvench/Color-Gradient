@@ -267,7 +267,7 @@ def calcElpsPoint(a, b, axisRadians, curTheta, center):
 
     i = round(r*math.cos(radians) + center[0])
     j = round(r*math.sin(radians) + center[1])
-    return i,j
+    return i,j # Determine whether this is rows,col or col,row
 
 
 

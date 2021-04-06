@@ -1,10 +1,11 @@
+# External Imports
 from astropy.io import fits
 import matplotlib.pyplot as plt
 import numpy as np
 from scipy.spatial import ConvexHull, convex_hull_plot_2d
 
 
-
+# Internal Imports
 import inputFiles
 import createStructs
 
@@ -43,9 +44,9 @@ def main(merge, waveband1, waveband2, galNum, onOpenlabs, makePDF):
     bins = np.linspace(overallMinFlux,overallMaxFlux,nBins)
 
     # Calculate fluxs into FINALPLOT
-    for i in range(merge,len(arcsEllipse_Positions)-merge):
-        current_aepObj = arcsEllipse_Positions[i]
-        neighbor_aepObjs = [arcsEllipse_Positions[j] for j in np.arange(i-merge,i+merge+1) if (i!=j)]
+    for ii in range(merge,len(arcsEllipse_Positions)-merge):
+        current_aepObj = arcsEllipse_Positions[ii]
+        neighbor_aepObjs = [arcsEllipse_Positions[j] for j in np.arange(ii-merge,ii+merge+1) if (ii!=j)]
         groupedThetas = createStructs.groupNeighborThetas(middle=current_aepObj, neighbors=neighbor_aepObjs)
         semiMajAxisIndex = int(current_aepObj.majorAxisLen/2) - minSemiMajAxLen
         for theta,pixelList in groupedThetas:
@@ -67,19 +68,37 @@ def main(merge, waveband1, waveband2, galNum, onOpenlabs, makePDF):
     for row in range(0,FINALPLOT.shape[0]):
         for col in range(0,FINALPLOT.shape[1]):
             if np.all( FINALPLOT[row,col]!=0 ):
-                coords.append( [col,row] )
-
+                coords.append( [col,row] )          # col==x, row ==y
             # GET POINTS THAT ARE ON THE OUTLINE OF THE PLOT plot lines as reference
             else:
-                # check border values
+                # TODO check border values
+                # TODO
+                # TODO
+                # TODO
+                # TODO
+                # TODO
                 pass
-    coords = np.array(coords)
-    hull = ConvexHull(coords)
-    # Reverse compute the pixels within convex hull
+    originalcoords = np.array(coords)
+    originalHull   = ConvexHull(originalcoords)
+    # Reverse compute the pixels within convex hull ( TODO: currently does not do the grouped thetas, so it doesn't takethe average of fluxs nearby, could maybe combine this loop with the previous one that utilizes groupedThetas)
+    for row in range(0,FINALPLOT.shape[0]):
+        for col in range(0,FINALPLOT.shape[1]):
+            newcoords = coords.copy()
+            newcoords.append( [col,row] )           # col==x, row ==y 
+            newHull   = ConvexHull(np.array(newcoords))
+            if (np.array_equal(originalHull.simplices,newHull.simplices)):
+                # Reverse the adjustments made to the SemiMajAxisLen and Theta
+                semiMajAxis  = row + minSemiMajAxLen
+                theta        = (newOverallMaxTheta - col) if sWise else (col + newOverallMinTheta)
+                fitsI, fitsJ = createStructs.calcElpsPoint(a=semiMajAxis, b=semiMajAxis*minMaxRatio, axisRadians=axisRadians, curTheta=theta, center=(inputCenterR, inputCenterR))
+                avgFlux = createStructs.calcFlux(fitsI,fitsJ,fits1,fits2)
+                for i in range(nBins-1):
+                    if (bins[i]<=avgFlux and avgFlux<=bins[i+1]) or (bins[i]>=avgFlux and avgFlux>=bins[i+1]):
+                        break
+                relScale = 1-i/nBins
+                FINALPLOT[row,col] = relScale # Automatically converts relScale -> [relScale, relScale, relScale]
 
-
-
-
+   
 
     # PLOTTING  the WHITER it is, the larger WAVEBAND2 is.
                ### WHITE means the MINIMUM difference, meaning WAVEBAND2 is at its largest
@@ -93,8 +112,8 @@ def main(merge, waveband1, waveband2, galNum, onOpenlabs, makePDF):
     ax[0].set_aspect(2)
     ax[0].set_xlabel("θ from front", size=13)
     ax[0].set_ylabel(f"Semi-Major Axis Length ({0}-{maxSemiMajAxLen-minSemiMajAxLen})", size=13)
-    for simplex in hull.simplices:
-        ax[0].plot(coords[simplex, 0], coords[simplex, 1], '--',color ='red')
+    for simplex in originalHull.simplices:
+        ax[0].plot(originalcoords[simplex, 0], originalcoords[simplex, 1], '--',color ='red')
     ### PLOT 2
     imgAPng = inputFiles.read_imageAPng(waveband=waveband1,galNum=galNum,onOpenlabs=onOpenlabs)
     outlineColor = np.max(imgAPng)
@@ -114,7 +133,7 @@ def main(merge, waveband1, waveband2, galNum, onOpenlabs, makePDF):
 
     plt.suptitle(f"{galNum}_({waveband1}-{waveband2})_merge({merge})", size=17)
     if (makePDF):
-        plt.savefig(f"runs/newRunRand200/{galNum}_({waveband1}-{waveband2})_merge({merge}).pdf")
+        plt.savefig(f"runs/{galNum}_({waveband1}-{waveband2})_merge({merge}).pdf")
     else:
         plt.show()
     plt.close()
@@ -127,8 +146,8 @@ if __name__ == "__main__":
 
 
 
-    onOpenlabs = True
-    makePDF    = True
+    onOpenlabs = False
+    makePDF    = False
 
 
 
