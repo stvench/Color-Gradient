@@ -65,19 +65,24 @@ def main(merge, waveband1, waveband2, galNum, onOpenlabs, makePDF):
 
     # Get all points in FINALPLOT that are non-zero, put in np array, compute CONVEX HULL
     coords = []
+    originalBorderPixels = []
     for row in range(0,FINALPLOT.shape[0]):
         for col in range(0,FINALPLOT.shape[1]):
             if np.all( FINALPLOT[row,col]!=0 ):
                 coords.append( [col,row] )          # col==x, row ==y
             # GET POINTS THAT ARE ON THE OUTLINE OF THE PLOT plot lines as reference
-            else:
-                # TODO STORE border values
+
+                # Look at the 8 surronding pixels, if valid pixel and is black, add to count
+                # If the black count >= 3, then store the current (row,col) as a border pixel
+
+
+
+                # TODO STORE border values 
                 # TODO
                 # TODO
                 # TODO
                 # TODO
                 # TODO
-                pass
     originalcoords = np.array(coords)
     originalHull   = ConvexHull(originalcoords)
     # Reverse compute the pixels within convex hull ( TODO: currently does not do the grouped thetas, so it doesn't takethe average of fluxs nearby, could maybe combine this loop with the previous one that utilizes groupedThetas)
@@ -97,8 +102,41 @@ def main(merge, waveband1, waveband2, galNum, onOpenlabs, makePDF):
                         break
                 relScale = 1-i/nBins
                 FINALPLOT[row,col] = relScale # Automatically converts relScale -> [relScale, relScale, relScale]
+    # FINALPLOT HERE HAS ALL THE PIXELS FILLED IN THAT ARE CONSIDERED WITHIN THE CONVEX HULL, JUST CHECK IF BORDER OR NOT
+    neighborOffsets3 = [
+        (-3,-3),(-3,-2),(-3,-1),(-3, 0),(-3, 1),(-3, 2),(-3, 3),
+        (-2,-3),(-2,-2),(-2,-1),(-2, 0),(-2, 1),(-2, 2),(-2, 3),
+        (-1,-3),(-1,-2),(-1,-1),(-1, 0),(-1, 1),(-1, 2),(-1, 3),
+        ( 0,-3),( 0,-2),( 0,-1),        ( 0, 1),( 0, 2),( 0, 3),
+        ( 1,-3),( 1,-2),( 1,-1),( 1, 0),( 1, 1),( 1, 2),( 1, 3),
+        ( 2,-3),( 2,-2),( 2,-1),( 2, 0),( 2, 1),( 2, 2),( 2, 3),
+        ( 3,-3),( 3,-2),( 3,-1),( 3, 0),( 3, 1),( 3, 2),( 3, 3)
+    ]
+    FPROWS = FINALPLOT.shape[0]
+    FPCOLS = FINALPLOT.shape[1]
+    expandedRegion = set()
+    for row in range(0,FPROWS):
+        for col in range(0,FPCOLS):
+            if np.all( FINALPLOT[row,col]!=0 ):
+                for i,j in neighborOffsets3:
+                    neighborRow = row + i
+                    neighborCol = col + j
+                    if (neighborRow>=0) and (neighborRow<=FPROWS-1) and (neighborCol>=0) and (neighborCol<=FPCOLS-1):
+                        expandedRegion.add( (neighborRow, neighborCol) )
+    for row,col in expandedRegion:
+        if np.all( FINALPLOT[row,col]==0 ):
+            semiMajAxis  = row + minSemiMajAxLen
+            theta        = (newOverallMaxTheta - col) if sWise else (col + newOverallMinTheta)
+            fitsI, fitsJ = createStructs.calcElpsPoint(a=semiMajAxis, b=semiMajAxis*minMaxRatio, axisRadians=axisRadians, curTheta=theta, center=(inputCenterR, inputCenterR))
+            avgFlux = createStructs.calcFlux(fitsI,fitsJ,fits1,fits2)
+            for i in range(nBins-1):
+                if (bins[i]<=avgFlux and avgFlux<=bins[i+1]) or (bins[i]>=avgFlux and avgFlux>=bins[i+1]):
+                    break
+            relScale = 1-i/nBins
+            FINALPLOT[row,col] = relScale # Automatically converts relScale -> [relScale, relScale, relScale]
 
-   
+
+
 
     # PLOTTING  the WHITER it is, the larger WAVEBAND2 is.
                ### WHITE means the MINIMUM difference, meaning WAVEBAND2 is at its largest
