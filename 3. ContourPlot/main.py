@@ -71,7 +71,7 @@ def main(merge, waveband1, waveband2, galNum, onOpenlabs, makePDF):
                 coords.append( [col,row] )          # col==x, row ==y
             # GET POINTS THAT ARE ON THE OUTLINE OF THE PLOT plot lines as reference
             else:
-                # TODO check border values
+                # TODO STORE border values
                 # TODO
                 # TODO
                 # TODO
@@ -131,6 +131,8 @@ def main(merge, waveband1, waveband2, galNum, onOpenlabs, makePDF):
         imgAPng[i,j] = outlineColor
     ax[1].imshow(imgAPng)
 
+
+
     plt.suptitle(f"{galNum}_({waveband1}-{waveband2})_merge({merge})", size=17)
     if (makePDF):
         plt.savefig(f"runs/{galNum}_({waveband1}-{waveband2})_merge({merge}).pdf")
@@ -159,8 +161,8 @@ if __name__ == "__main__":
         ### 2. Already needs the data folder
         count    = 1
         errCount = 0
-        galFile       = open('data/getItSp.txt','r')           # Each line is a galaxy to test
-        failedGalaxys = open("data/DEBUGLATER.txt","w")  # Each line is a galaxy that failed
+        galFile       = open('data/Steven-Big-Galaxies.txt','r')           # Each line is a galaxy to test
+        failedGalaxys = open("data/DEBUGLATER.txt","w")                    # Each line is a galaxy that failed
         galaxy = galFile.readline()
         while galaxy:
             print("-------------------------------------------")
@@ -174,8 +176,8 @@ if __name__ == "__main__":
                 errCount += 1
                 # raise 
             galaxy = galFile.readline()
-            if count == 200:
-                break
+            # if count == 200:
+            #     break
             count += 1
         galFile.close()
         failedGalaxys.close()

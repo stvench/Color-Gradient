@@ -117,7 +117,7 @@ def groupNeighborThetas(middle, neighbors):
 
 def calcFlux(i,j,fits1,fits2):
     """
-        Given an (i,j) position, returns the average (float) of all 8 values surrounding it in a square
+        Given an ( i,j ) position, returns the average (float) of all 8 values surrounding it in a square
     """
     flux = 0
     if i==0:
