@@ -3,6 +3,7 @@ from astropy.io import fits
 import matplotlib.pyplot as plt
 import numpy as np
 from scipy.spatial import ConvexHull, convex_hull_plot_2d
+import math
 
 
 # Internal Imports
@@ -35,6 +36,8 @@ def main(merge, waveband1, waveband2, galNum, onOpenlabs, makePDF):
     xRange = newOverallMaxTheta-newOverallMinTheta+1     # Columns
     yRange = maxSemiMajAxLen-minSemiMajAxLen+1           # Rows
     FINALPLOT = np.zeros((yRange,xRange,3), dtype=float) # array of [1.0,1.0,1.0] (plt.imshow() for RBGs floats bounded by [0...1], 1==WHITE)
+    FPROWS = FINALPLOT.shape[0]
+    FPCOLS = FINALPLOT.shape[1]
     fits1 = inputFiles.readFits(waveband1,galNum,onOpenlabs)
     fits2 = inputFiles.readFits(waveband2,galNum,onOpenlabs)
 
@@ -64,32 +67,36 @@ def main(merge, waveband1, waveband2, galNum, onOpenlabs, makePDF):
             FINALPLOT[semiMajAxisIndex,thetaIndex] = relScale # Automatically converts relScale -> [relScale, relScale, relScale]
 
     # Get all points in FINALPLOT that are non-zero, put in np array, compute CONVEX HULL
+    neighborOffsets1 = [
+        (-1,-1),(-1, 0),(-1, 1),
+        ( 0,-1),        ( 0, 1),
+        ( 1,-1),( 1, 0),( 1, 1)
+    ]
     coords = []
-    originalBorderPixels = []
-    for row in range(0,FINALPLOT.shape[0]):
-        for col in range(0,FINALPLOT.shape[1]):
+    originalBorderPixels = set()
+    for row in range(0,FPROWS):
+        for col in range(0,FPCOLS):
             if np.all( FINALPLOT[row,col]!=0 ):
                 coords.append( [col,row] )          # col==x, row ==y
-            # GET POINTS THAT ARE ON THE OUTLINE OF THE PLOT plot lines as reference
+                # GET POINTS THAT ARE ON THE OUTLINE OF THE PLOT plot lines as reference
+                #   Look at the 8 surronding pixels, if valid pixel and is black, add to count
+                #   If the black count >= 2, then store the current (row,col) as a border pixel
+                blackCnt = 0
+                for i,j in neighborOffsets1:
+                    neighborRow = row + i
+                    neighborCol = col + j
+                    if (neighborRow>=0) and (neighborRow<=FPROWS-1) and (neighborCol>=0) and (neighborCol<=FPCOLS-1) and np.all( FINALPLOT[neighborRow,neighborCol]==0 ):
+                        blackCnt += 1
+                if (blackCnt >= 2):
+                    originalBorderPixels.add( (row,col) )
 
-                # Look at the 8 surronding pixels, if valid pixel and is black, add to count
-                # If the black count >= 3, then store the current (row,col) as a border pixel
-
-
-
-                # TODO STORE border values 
-                # TODO
-                # TODO
-                # TODO
-                # TODO
-                # TODO
     originalcoords = np.array(coords)
     originalHull   = ConvexHull(originalcoords)
     # Reverse compute the pixels within convex hull ( TODO: currently does not do the grouped thetas, so it doesn't takethe average of fluxs nearby, could maybe combine this loop with the previous one that utilizes groupedThetas)
-    for row in range(0,FINALPLOT.shape[0]):
-        for col in range(0,FINALPLOT.shape[1]):
+    for row in range(0,FPROWS):
+        for col in range(0,FPCOLS):
             newcoords = coords.copy()
-            newcoords.append( [col,row] )           # col==x, row ==y 
+            newcoords.append( [col,row] )  # TODO: Add a check for if already in original set of pixels          # col==x, row ==y 
             newHull   = ConvexHull(np.array(newcoords))
             if (np.array_equal(originalHull.simplices,newHull.simplices)):
                 # Reverse the adjustments made to the SemiMajAxisLen and Theta
@@ -112,8 +119,6 @@ def main(merge, waveband1, waveband2, galNum, onOpenlabs, makePDF):
         ( 2,-3),( 2,-2),( 2,-1),( 2, 0),( 2, 1),( 2, 2),( 2, 3),
         ( 3,-3),( 3,-2),( 3,-1),( 3, 0),( 3, 1),( 3, 2),( 3, 3)
     ]
-    FPROWS = FINALPLOT.shape[0]
-    FPCOLS = FINALPLOT.shape[1]
     expandedRegion = set()
     for row in range(0,FPROWS):
         for col in range(0,FPCOLS):
@@ -137,7 +142,6 @@ def main(merge, waveband1, waveband2, galNum, onOpenlabs, makePDF):
 
 
 
-
     # PLOTTING  the WHITER it is, the larger WAVEBAND2 is.
                ### WHITE means the MINIMUM difference, meaning WAVEBAND2 is at its largest
                ### if negative range, waveband2>waveband1, if positive range, waveband2<waveband1
@@ -150,8 +154,25 @@ def main(merge, waveband1, waveband2, galNum, onOpenlabs, makePDF):
     ax[0].set_aspect(2)
     ax[0].set_xlabel("θ from front", size=13)
     ax[0].set_ylabel(f"Semi-Major Axis Length ({0}-{maxSemiMajAxLen-minSemiMajAxLen})", size=13)
+    # Plot original arm outline
+    #   Iterate through each border position, finding the closest one, plotting a line between them (COULD SORT FIRST ON X-AXIS, OBTAIN COMPLETE OUTLINE)
+    for curPos in originalBorderPixels:
+        closestPos = None
+        closestPosDist = None
+        for otherPos in originalBorderPixels:
+            if (curPos != otherPos):
+                curDist = math.sqrt((otherPos[0]-curPos[0])**2+(otherPos[1]-curPos[1])**2)
+                if (closestPosDist is None) or (curDist<closestPosDist):
+                    closestPosDist = curDist
+                    closestPos = [otherPos]
+                elif (curDist==closestPosDist): # DO THIS TO GET BOTH SIDES WHEN ITS A STRAIGH LINE
+                    closestPos.append(otherPos)
+        for ele in closestPos:
+            ax[0].plot([curPos[1],ele[1]],[curPos[0],ele[0]], '-',color ='yellow',linewidth=0.15 )
+    # Plot convex hull
     for simplex in originalHull.simplices:
-        ax[0].plot(originalcoords[simplex, 0], originalcoords[simplex, 1], '--',color ='red')
+        ax[0].plot(originalcoords[simplex, 0], originalcoords[simplex, 1], '-',color ='red',linewidth=0.15)
+
     ### PLOT 2
     imgAPng = inputFiles.read_imageAPng(waveband=waveband1,galNum=galNum,onOpenlabs=onOpenlabs)
     outlineColor = np.max(imgAPng)
