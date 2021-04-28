@@ -242,9 +242,23 @@ if __name__ == "__main__":
         failedGalaxys.close()
         print(f"{count-errCount}/{count} ({(count-errCount)/count*100:.2f}%) succeeded")
     else:
+        # NEWNEW.pdf pg.2
+        # 1237648722298732703
+        # 1237649918971216048
+
+
+        main(merge=0, waveband1='g',waveband2='i',galNum="1237648722298732703",onOpenlabs=onOpenlabs,makePDF=makePDF)
+
+
+
+
+
+
+
+        
         ### Local runs
         #  1172 get_PositionArm Arm: Extra1(i=127,j=137)    Arm Extra2(i=127,j=147)
-        main(merge=0, waveband1='g',waveband2='i',galNum="1237660635996291172",onOpenlabs=onOpenlabs,makePDF=makePDF)
+        # main(merge=0, waveband1='g',waveband2='i',galNum="1237660635996291172",onOpenlabs=onOpenlabs,makePDF=makePDF)
         # main(merge=1, waveband1='g',waveband2='i',galNum="1237660635996291172",onOpenlabs=onOpenlabs,makePDF=makePDF)
         # main(merge=2, waveband1='g',waveband2='i',galNum="1237660635996291172",onOpenlabs=onOpenlabs,makePDF=makePDF)
 

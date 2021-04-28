@@ -1,0 +1,5 @@
+-This folder "Sample_Galaxies" is the location of galaxies test data, both SpArcFiRe output, and respective FITS files for wavebands in ["u", "g", "r", "i", "z"]
+
+- Each subdirectory is the galaxy number (SloanID), and within each subdirectory is a folder for each of the 5 above wavebands, containg respective SpArcFiRe output. Also included is the 5 waveband's FITS files
+
+- Might also contain PDF's, from early circle version of the code.
