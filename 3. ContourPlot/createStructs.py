@@ -2,6 +2,11 @@ import math
 import numpy as np
 
 
+class InvalidStartTheta(Exception):
+    pass
+
+
+
 def get_largestArm(galaxyArms):
     """Returns SET of the largest arm in galaxy
             -most pixels, not length"""
@@ -53,7 +58,7 @@ def unionClosestArm(waveband1LargestArm, waveband2AllArms):
 
 
 def arm_to_ArcsEllipse(majorAxis, minMaxRatio, axisRadians, armsPixels, center):
-    # Calculate the absolute starting theta. IF the arm overlaps, I.E. it loops around 360degrees, this will fail.
+    # Calculate the absolute starting theta. IF the arm overlaps itself, I.E. it loops around 360degrees, this will fail.
     startTheta = None
     rangeWidth = 4
     for curTheta in range(rangeWidth,360,rangeWidth):
@@ -69,7 +74,8 @@ def arm_to_ArcsEllipse(majorAxis, minMaxRatio, axisRadians, armsPixels, center):
         if (validStart):
             startTheta=curTheta
             break
-    # TODO: Put some error thrown here so returns early?
+    if (startTheta is None):
+        raise InvalidStartTheta("Arm (possibly) overlaps itself 360 degrees")
     # Calculate the rest using this "global" start theta
     arcsEllipse_Positions = []
     overallMinTheta = None
@@ -83,7 +89,6 @@ def arm_to_ArcsEllipse(majorAxis, minMaxRatio, axisRadians, armsPixels, center):
             if ((i,j) in armsPixels):
                 absoluteOverlapCount += 1
         if (absoluteOverlapCount >= 5):
-
             ### Obtain min/max angle of the arc-arm overlap (relative to startTheta) for each RADIUS
             for curTheta in range(startTheta,startTheta+360):
                 i,j = calcElpsPoint(semiMajLen, semiMajLen*minMaxRatio, axisRadians, curTheta, center)
@@ -202,21 +207,6 @@ def calcElpsPoint(a, b, axisRadians, curTheta, center):
     j = round(r*math.sin(radians) + center[1])
     return i,j # Determine whether this is rows,col or col,row
 
-
-
-def calcstartTheta(semiMajLen, minMaxRatio, axisRadians, center, armsPixels):
-    rangeWidth = 4
-    for curTheta in range(rangeWidth,360,rangeWidth):
-        emptyGap = True
-        for innerTheta in range(curTheta-rangeWidth,curTheta+rangeWidth):
-            i,j = calcElpsPoint(semiMajLen, semiMajLen*minMaxRatio, axisRadians, innerTheta, center)
-            if ((i,j) in armsPixels):
-                emptyGap = False      
-                break
-        if (emptyGap):
-            startTheta=curTheta
-            break
-    return startTheta
 
 
 
