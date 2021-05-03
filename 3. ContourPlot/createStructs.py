@@ -75,6 +75,7 @@ def arm_to_ArcsEllipse(majorAxis, minMaxRatio, axisRadians, armsPixels, center):
             startTheta=curTheta
             break
     if (startTheta is None):
+        print("Arm (possibly) overlaps itself 360 degrees")
         raise InvalidStartTheta("Arm (possibly) overlaps itself 360 degrees")
     # Calculate the rest using this "global" start theta
     arcsEllipse_Positions = []
@@ -137,7 +138,7 @@ def groupNeighborThetas(middle, neighbors):
 
 def calcFlux(i,j,fits1,fits2):
     """
-        Given an ( i,j ) position, returns the average (float) of all 8 values surrounding it in a square
+        Given an ( i,j ) position, returns the average (float) of ITSELF and all 8 values surrounding it in a square
     """
     neighborOffsets = [
         (-1,-1),(-1, 0),(-1, 1),
@@ -209,7 +210,6 @@ def calcElpsPoint(a, b, axisRadians, curTheta, center):
 
 
 
-
 def armOutline(armsPixels):
     """
         Given pixels of an arm, gets only pixels that have >= threshold missing in
@@ -249,7 +249,9 @@ def updateThetaStarts(overallMinTheta, overallMaxTheta, arcsEllipse_Positions):
 
         Returns new overall min/max thetas, sWise bool
     """
-    needSub360 = True if overallMaxTheta-overallMinTheta >= 360 else False
+    #FIXME: Since the startTheta in arm_to_arcEllipse was changed to be the same across all radius,
+    #           I don't think this function actually does anything anymore, as the range of thetas will always be <360
+    needSub360 = True if overallMaxTheta-overallMinTheta >= 360 else False #FIXME: LOOK AT THIS DECIDE WHAT TO DO
     newOverallMinTheta = None
     newOverallMaxTheta = None
     for ae_pObj in arcsEllipse_Positions:
@@ -266,8 +268,8 @@ def updateThetaStarts(overallMinTheta, overallMaxTheta, arcsEllipse_Positions):
         ae_pObj.arc = arcUpdatedThetas
     armsFrontTheta = arcsEllipse_Positions[0].arc[0][0]
     armsEndTheta   = arcsEllipse_Positions[-1].arc[-1][0]
-    sWise = True if armsFrontTheta>armsEndTheta else False
-    return newOverallMinTheta, newOverallMaxTheta, sWise
+    sWise = True if armsFrontTheta>armsEndTheta else False  #TODO: Pretty sure can move this into arm_to_arcEllipses(), Get rid of this whole function
+    return newOverallMinTheta, newOverallMaxTheta, sWise 
 
 
 
