@@ -53,6 +53,24 @@ def unionClosestArm(waveband1LargestArm, waveband2AllArms):
 
 
 def arm_to_ArcsEllipse(majorAxis, minMaxRatio, axisRadians, armsPixels, center):
+    # Calculate the absolute starting theta. IF the arm overlaps, I.E. it loops around 360degrees, this will fail.
+    startTheta = None
+    rangeWidth = 4
+    for curTheta in range(rangeWidth,360,rangeWidth):
+        validStart = True
+        for innerTheta in range(curTheta-rangeWidth,curTheta+rangeWidth):
+            for semiMajLen in range(5, int(majorAxis/2)):
+                i,j = calcElpsPoint(semiMajLen, semiMajLen*minMaxRatio, axisRadians, innerTheta, center)
+                if ((i,j) in armsPixels):
+                    validStart = False      
+                    break
+            if (not validStart):
+                break
+        if (validStart):
+            startTheta=curTheta
+            break
+    # TODO: Put some error thrown here so returns early?
+    # Calculate the rest using this "global" start theta
     arcsEllipse_Positions = []
     overallMinTheta = None
     overallMaxTheta = None
@@ -66,11 +84,8 @@ def arm_to_ArcsEllipse(majorAxis, minMaxRatio, axisRadians, armsPixels, center):
                 absoluteOverlapCount += 1
         if (absoluteOverlapCount >= 5):
 
-            # Obtain startingTheta (eliminates 360-0 overlap)
-            startingTheta=calcStartingTheta(semiMajLen, minMaxRatio, axisRadians, center, armsPixels)
-
-            # Obtain min/max angle of the arc overlap (relative to startingTheta)
-            for curTheta in range(startingTheta,startingTheta+360):
+            ### Obtain min/max angle of the arc-arm overlap (relative to startTheta) for each RADIUS
+            for curTheta in range(startTheta,startTheta+360):
                 i,j = calcElpsPoint(semiMajLen, semiMajLen*minMaxRatio, axisRadians, curTheta, center)
                 if ((i,j) in armsPixels):
                     if (currentRadius.minTheta is None):
@@ -80,9 +95,9 @@ def arm_to_ArcsEllipse(majorAxis, minMaxRatio, axisRadians, armsPixels, center):
                 overallMinTheta = currentRadius.minTheta
             if (overallMaxTheta is None) or (currentRadius.maxTheta > overallMaxTheta):
                 overallMaxTheta = currentRadius.maxTheta 
-            
-            # Stores the points for ARC and ELLIPSE
-            for curTheta in range(startingTheta,startingTheta+360):
+            #FIXME: Can combine the previous/next for loops as they iterate the same, don't need to be separate?
+            ### Stores the points for ARC and ELLIPSE
+            for curTheta in range(startTheta,startTheta+360):
                 i,j = calcElpsPoint(semiMajLen, semiMajLen*minMaxRatio, axisRadians, curTheta, center)
                 currentRadius.ellipse.add( (i,j) )
                 # If within the theta range for the ARC
@@ -119,102 +134,20 @@ def calcFlux(i,j,fits1,fits2):
     """
         Given an ( i,j ) position, returns the average (float) of all 8 values surrounding it in a square
     """
-    flux = 0
-    if i==0:
-        if j==0:
-            flux += fits1[i,j]      - fits2[i,j]
-            flux += fits1[i,j+1]    - fits2[i,j+1]
-
-            flux += fits1[i+1,j]    - fits2[i+1,j]
-            flux += fits1[i+1,j+1]  - fits2[i+1,j+1]
-            avgFlux = flux/4
-        elif j==len(fits1)-1:
-            flux += fits1[i,j]      - fits2[i,j]
-            flux += fits1[i,j-1]    - fits2[i,j-1]
-
-            flux += fits1[i+1,j]    - fits2[i+1,j]
-            flux += fits1[i+1,j-1]  - fits2[i+1,j-1]
-            avgFlux = flux/4
-        else:
-            flux += fits1[i,j]      - fits2[i,j]
-            flux += afits1[i,j+1]   - fits2[i,j+1]
-            flux += fits1[i,j-1]    - fits2[i,j-1]
-
-            flux += fits1[i+1,j]    - fits2[i+1,j]
-            flux += fits1[i+1,j+1]  - fits2[i+1,j+1]
-            flux += fits1[i+1,j-1]  - fits2[i+1,j-1]
-            avgFlux = flux/6
-    elif i==len(fits1)-1:
-        if j==0:
-            flux += fits1[i,j]      - fits2[i,j]
-            flux += fits1[i,j+1]    - fits2[i,j+1]
-
-            flux += fits1[i-1,j]    - fits2[i-1,j]
-            flux += fits1[i-1,j+1]  - fits2[i-1,j+1]
-            avgFlux = flux/4
-        elif j==len(fits1)-1:
-            flux += fits1[i,j]      - fits2[i,j]
-            flux += fits1[i,j-1]    - fits2[i,j-1]
-
-            flux += fits1[i-1,j]    - fits2[i-1,j]
-            flux += fits1[i-1,j-1]  - fits2[i-1,j-1]
-            avgFlux = flux/4
-        else:
-            flux += fits1[i,j]      - fits2[i,j]
-            flux += fits1[i,j+1]    - fits2[i,j+1]
-            flux += fits1[i,j-1]    - fits2[i,j-1]
-
-            flux += fits1[i-1,j]    - fits2[i-1,j]
-            flux += fits1[i-1,j+1]  - fits2[i-1,j+1]
-            flux += fits1[i-1,j-1]  - fits2[i-1,j-1]
-            avgFlux = flux/6
-    elif j==0:
-        if i==0:
-            # Already accounted for
-            pass
-        elif i==len(fits1)-1:
-            # Already accounted for
-            pass
-        else:
-            flux += a[i,j]          - fits2[i,j]
-            flux += a[i,j+1]        - fits2[i,j+1]
-
-            flux += a[i+1,j]        - fits2[i+1,j]
-            flux += a[i+1,j+1]      - fits2[i+1,j+1]
-
-            flux += a[i-1,j]        - fits2[i-1,j]
-            flux += a[i-1,j+1]      - fits2[i-1,j+1]
-            avgFlux = flux/6
-    elif j==len(fits1)-1:
-        if i==0:
-            # Already accounted for
-            pass
-        elif i==len(fits1)-1:
-            # Already accounted for
-            pass
-        else:
-            flux += fits1[i,j]      - fits2[i,j]
-            flux += fits1[i,j-1]    - fits2[i,j-1]
-
-            flux += fits1[i+1,j]    - fits2[i+1,j]
-            flux += fits1[i+1,j-1]  - fits2[i+1,j-1]
-
-            flux += fits1[i-1,j]    - fits2[i-1,j]
-            flux += fits1[i-1,j-1]  - fits2[i-1,j-1]
-            avgFlux = flux/6
-    else:
-        flux += fits1[i,j]          - fits2[i,j]
-        flux += fits1[i,j+1]        - fits2[i,j+1]
-        flux += fits1[i,j-1]        - fits2[i,j-1]
-
-        flux += fits1[i+1,j]        - fits2[i+1,j]
-        flux += fits1[i+1,j+1]      - fits2[i+1,j+1]
-        flux += fits1[i+1,j-1]      - fits2[i+1,j-1]
-
-        flux += fits1[i-1,j]        - fits2[i-1,j]
-        flux += fits1[i-1,j+1]      - fits2[i-1,j+1]
-        flux += fits1[i-1,j-1]      - fits2[i-1,j-1]
-        avgFlux = flux/9
+    neighborOffsets = [
+        (-1,-1),(-1, 0),(-1, 1),
+        ( 0,-1),( 0, 0),( 0, 1),
+        ( 1,-1),( 1, 0),( 1, 1)
+    ]
+    totalFlux = 0
+    neighborCount = 0
+    for offI, offJ in neighborOffsets:
+        nbI = i+offI
+        nbJ = j+offJ
+        if (nbI>=0) and (nbI<=len(fits1)-1) and (nbJ>=0) and (nbJ<=len(fits1)-1):
+            neighborCount += 1
+            totalFlux += fits1[nbI,nbJ] - fits2[nbI,nbJ]
+    avgFlux = totalFlux/neighborCount
     return avgFlux
 
 
@@ -271,18 +204,19 @@ def calcElpsPoint(a, b, axisRadians, curTheta, center):
 
 
 
-def calcStartingTheta(semiMajLen, minMaxRatio, axisRadians, center, armsPixels):
-    for curTheta in range(40,360,40):
+def calcstartTheta(semiMajLen, minMaxRatio, axisRadians, center, armsPixels):
+    rangeWidth = 4
+    for curTheta in range(rangeWidth,360,rangeWidth):
         emptyGap = True
-        for innerTheta in range(curTheta-40,curTheta+40):
+        for innerTheta in range(curTheta-rangeWidth,curTheta+rangeWidth):
             i,j = calcElpsPoint(semiMajLen, semiMajLen*minMaxRatio, axisRadians, innerTheta, center)
             if ((i,j) in armsPixels):
                 emptyGap = False      
                 break
         if (emptyGap):
-            startingTheta=curTheta
+            startTheta=curTheta
             break
-    return startingTheta
+    return startTheta
 
 
 
