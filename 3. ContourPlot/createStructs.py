@@ -57,7 +57,8 @@ def unionClosestArm(waveband1LargestArm, waveband2AllArms):
 
 
 
-def arm_to_ArcsEllipse(majorAxis, minMaxRatio, axisRadians, armsPixels, center):
+def arm_to_ArcsEllipse(majorAxis, minMaxRatio, axisRadians, armsPixels, center): 
+    """ Raises InvalidStartTheta Error """
     # Calculate the absolute starting theta. IF the arm overlaps itself, I.E. it loops around 360degrees, this will fail.
     startTheta = None
     rangeWidth = 4

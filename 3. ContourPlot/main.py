@@ -26,7 +26,7 @@ def main(merge, waveband1, waveband2, galNum, onOpenlabs, makePDF):
     ######## armsPixels1 = createStructs.get_PositionArm(galaxyArms=pixelLoc1,i=127,j=147)
 
     armsPixels  = createStructs.unionClosestArm(waveband1LargestArm=armsPixels1, waveband2AllArms=pixelLoc2)
-    # Create the arcsEllipse_Positions & update thetas 
+    # Create the arcsEllipse_Positions & update thetas (TODO: Raises InvalidStartTheta Error)
     arcsEllipse_Positions, overallMinTheta, overallMaxTheta = createStructs.arm_to_ArcsEllipse(majorAxis=majorAxis, minMaxRatio=minMaxRatio, axisRadians=axisRadians, armsPixels=armsPixels, center=(inputCenterR, inputCenterR))
     newOverallMinTheta, newOverallMaxTheta, sWise = createStructs.updateThetaStarts(overallMinTheta=overallMinTheta, overallMaxTheta=overallMaxTheta, arcsEllipse_Positions=arcsEllipse_Positions)
 
@@ -227,7 +227,7 @@ if __name__ == "__main__":
             print("-------------------------------------------")
             print(count,galaxy)
             try:
-                main(merge=0, waveband1='g', waveband2='i', galNum=galaxy.rstrip("\n"), onOpenlabs=onOpenlabs, makePDF=makePDF)
+                main(merge=0, waveband1='u', waveband2='z', galNum=galaxy.rstrip("\n"), onOpenlabs=onOpenlabs, makePDF=makePDF)
             except KeyboardInterrupt:
                 break
             except:
