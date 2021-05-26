@@ -26,7 +26,7 @@ def main(merge, waveband1, waveband2, galNum, onOpenlabs, makePDF):
     ######## armsPixels1 = createStructs.get_PositionArm(galaxyArms=pixelLoc1,i=127,j=147)
 
     armsPixels  = createStructs.unionClosestArm(waveband1LargestArm=armsPixels1, waveband2AllArms=pixelLoc2)
-    # Create the arcsEllipse_Positions & update thetas 
+    # Create the arcsEllipse_Positions & update thetas (TODO: Raises InvalidStartTheta Error)
     arcsEllipse_Positions, overallMinTheta, overallMaxTheta = createStructs.arm_to_ArcsEllipse(majorAxis=majorAxis, minMaxRatio=minMaxRatio, axisRadians=axisRadians, armsPixels=armsPixels, center=(inputCenterR, inputCenterR))
     newOverallMinTheta, newOverallMaxTheta, sWise = createStructs.updateThetaStarts(overallMinTheta=overallMinTheta, overallMaxTheta=overallMaxTheta, arcsEllipse_Positions=arcsEllipse_Positions)
 
@@ -55,7 +55,7 @@ def main(merge, waveband1, waveband2, galNum, onOpenlabs, makePDF):
         for theta,pixelList in groupedThetas:
             totalAvgFlux = 0
             for i,j in pixelList:
-                avgFlux = createStructs.calcFlux(i,j,fits1,fits2)
+                avgFlux = createStructs.calcFlux(i,j,fits1,fits2) #FIXME: This calculate some overlap of neighbors???? 
                 totalAvgFlux += avgFlux
             totalAvgFlux /= len(pixelList)
             thetaIndex = (newOverallMaxTheta - theta) if sWise else (theta - newOverallMinTheta)
@@ -155,7 +155,7 @@ def main(merge, waveband1, waveband2, galNum, onOpenlabs, makePDF):
     ax[0].set_xlabel("θ from front", size=13)
     ax[0].set_ylabel(f"Semi-Major Axis Length ({0}-{maxSemiMajAxLen-minSemiMajAxLen})", size=13)
     # Plot original arm outline
-    #   Iterate through each border position, finding the closest one, plotting a line between them (COULD SORT FIRST ON X-AXIS, OBTAIN COMPLETE OUTLINE)
+    # Iterate through each border position, finding the closest one, plotting a line between them (COULD SORT FIRST ON X-AXIS, OBTAIN COMPLETE OUTLINE)
     for curPos in originalBorderPixels:
         closestPos = None
         closestPosDist = None
@@ -207,8 +207,8 @@ if __name__ == "__main__":
 
 
 
-    onOpenlabs = False
-    makePDF    = False
+    onOpenlabs = True
+    makePDF    = True
 
 
 
@@ -227,7 +227,7 @@ if __name__ == "__main__":
             print("-------------------------------------------")
             print(count,galaxy)
             try:
-                main(merge=0, waveband1='g', waveband2='i', galNum=galaxy.rstrip("\n"), onOpenlabs=onOpenlabs, makePDF=makePDF)
+                main(merge=0, waveband1='u', waveband2='z', galNum=galaxy.rstrip("\n"), onOpenlabs=onOpenlabs, makePDF=makePDF)
             except KeyboardInterrupt:
                 break
             except:
@@ -246,10 +246,15 @@ if __name__ == "__main__":
         # 1237648722298732703
         # 1237649918971216048
 
+        # try:
+        #     main(merge=0, waveband1='g',waveband2='i',galNum="1237648722298732703",onOpenlabs=onOpenlabs,makePDF=makePDF)
+        # except:
+        #     pass
 
-        main(merge=0, waveband1='g',waveband2='i',galNum="1237648722298732703",onOpenlabs=onOpenlabs,makePDF=makePDF)
-
-
+        # try:
+        #     main(merge=0, waveband1='g',waveband2='i',galNum="1237649918971216048",onOpenlabs=onOpenlabs,makePDF=makePDF)
+        # except:
+        #     pass
 
 
 
@@ -258,7 +263,7 @@ if __name__ == "__main__":
         
         ### Local runs
         #  1172 get_PositionArm Arm: Extra1(i=127,j=137)    Arm Extra2(i=127,j=147)
-        # main(merge=0, waveband1='g',waveband2='i',galNum="1237660635996291172",onOpenlabs=onOpenlabs,makePDF=makePDF)
+        main(merge=0, waveband1='g',waveband2='i',galNum="1237660635996291172",onOpenlabs=onOpenlabs,makePDF=makePDF)
         # main(merge=1, waveband1='g',waveband2='i',galNum="1237660635996291172",onOpenlabs=onOpenlabs,makePDF=makePDF)
         # main(merge=2, waveband1='g',waveband2='i',galNum="1237660635996291172",onOpenlabs=onOpenlabs,makePDF=makePDF)
 
