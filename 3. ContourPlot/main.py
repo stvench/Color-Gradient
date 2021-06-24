@@ -30,6 +30,50 @@ def main(merge, waveband1, waveband2, galNum, onOpenlabs, makePDF):
     arcsEllipse_Positions, overallMinTheta, overallMaxTheta = createStructs.arm_to_ArcsEllipse(majorAxis=majorAxis, minMaxRatio=minMaxRatio, axisRadians=axisRadians, armsPixels=armsPixels, center=(inputCenterR, inputCenterR))
     newOverallMinTheta, newOverallMaxTheta, sWise = createStructs.updateThetaStarts(overallMinTheta=overallMinTheta, overallMaxTheta=overallMaxTheta, arcsEllipse_Positions=arcsEllipse_Positions)
 
+
+
+
+
+    ################################################################################
+    ################################################################################
+    ################################################################################
+    ################################################################################
+    ################################################################################
+    #               Uncomment to see the previous iterations resulting plots
+
+    # for i in range(1,len(arcsEllipse_Positions)-1):
+    #     curEllipseInfo = arcsEllipse_Positions[i]
+    #     filePath1 = f"C:/Users/sc123/Desktop/gal/5. NonCircular FITS/3. ContourPlot/data/Sample_Galaxies/{galNum}/{galNum}_{waveband1}.fits"
+    #     hdul = fits.open(filePath1)
+    #     image_data1 = hdul[0].data # 2-D Numpy Array
+    #     hdul.close()
+    #     filePath2 = f"C:/Users/sc123/Desktop/gal/5. NonCircular FITS/3. ContourPlot/data/Sample_Galaxies/{galNum}/{galNum}_{waveband2}.fits"
+    #     hdul = fits.open(filePath2)
+    #     image_data2 = hdul[0].data # 2-D Numpy Array
+    #     hdul.close()
+    #     dataVals = [(phi,image_data1[i,j]-image_data2[i,j]) for phi,i,j in (curEllipseInfo.arc)]
+
+    #     theta = []
+    #     difs = []
+    #     for t,d in dataVals:
+    #         theta.append(t)
+    #         difs.append(d)
+    #     print(dataVals)
+    #     plt.plot(theta,difs)
+    #     plt.savefig("{}.pdf".format(curEllipseInfo.majorAxisLen))
+    #     plt.close()
+    # return
+
+    ################################################################################
+    ################################################################################
+    ################################################################################
+    ################################################################################
+    ################################################################################
+
+
+
+
+
     # Initialize variables for plotting
     minSemiMajAxLen = int(arcsEllipse_Positions[0].majorAxisLen/2)
     maxSemiMajAxLen = int(arcsEllipse_Positions[-1].majorAxisLen/2)
